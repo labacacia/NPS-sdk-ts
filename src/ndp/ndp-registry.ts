@@ -1,0 +1,82 @@
+// Copyright 2026 INNO LOTUS PTY LTD
+// SPDX-License-Identifier: Apache-2.0
+
+import type { AnnounceFrame, NdpResolveResult } from "./frames.js";
+
+interface RegistryEntry {
+  frame:     AnnounceFrame;
+  expiresAt: number;
+}
+
+export class InMemoryNdpRegistry {
+  private readonly _store = new Map<string, RegistryEntry>();
+
+  // Replaceable for testing
+  clock: () => number = () => Date.now();
+
+  announce(frame: AnnounceFrame): void {
+    const expiresAt = this.clock() + frame.ttl * 1000;
+    if (frame.ttl === 0) {
+      this._store.delete(frame.nid);
+      return;
+    }
+    this._store.set(frame.nid, { frame, expiresAt });
+  }
+
+  getByNid(nid: string): AnnounceFrame | undefined {
+    const entry = this._store.get(nid);
+    if (entry === undefined) return undefined;
+    if (this.clock() > entry.expiresAt) {
+      this._store.delete(nid);
+      return undefined;
+    }
+    return entry.frame;
+  }
+
+  resolve(target: string): NdpResolveResult | undefined {
+    for (const [nid, entry] of this._store) {
+      if (this.clock() > entry.expiresAt) { this._store.delete(nid); continue; }
+      if (!InMemoryNdpRegistry.nwpTargetMatchesNid(nid, target)) continue;
+      const addr = entry.frame.addresses[0];
+      if (addr === undefined) continue;
+      return { host: addr.host, port: addr.port, ttl: entry.frame.ttl };
+    }
+    return undefined;
+  }
+
+  getAll(): AnnounceFrame[] {
+    const now    = this.clock();
+    const result: AnnounceFrame[] = [];
+    for (const [nid, entry] of this._store) {
+      if (now > entry.expiresAt) { this._store.delete(nid); continue; }
+      result.push(entry.frame);
+    }
+    return result;
+  }
+
+  static nwpTargetMatchesNid(nid: string, target: string): boolean {
+    // NID: urn:nps:node:{authority}:{path-segment}
+    // target: nwp://{authority}/{path}
+    const nidParts = nid.split(":");
+    if (nidParts.length < 5 || nidParts[0] !== "urn" || nidParts[1] !== "nps" || nidParts[2] !== "node") {
+      return false;
+    }
+    if (!target.startsWith("nwp://")) return false;
+
+    const nidAuthority = nidParts[3]!;
+    const nidPath      = nidParts[4]!;
+    const rest         = target.slice("nwp://".length);
+    const slashIdx     = rest.indexOf("/");
+    if (slashIdx === -1) return false;
+
+    const urlAuthority = rest.slice(0, slashIdx);
+    const urlPath      = rest.slice(slashIdx + 1); // without leading slash
+
+    if (urlAuthority !== nidAuthority) return false;
+
+    // nidPath must be a prefix of urlPath at a segment boundary
+    if (urlPath === nidPath) return true;
+    if (urlPath.startsWith(nidPath + "/")) return true;
+    return false;
+  }
+}
