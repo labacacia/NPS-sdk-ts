@@ -1,6 +1,6 @@
 {
   "name": "@labacacia/nps-sdk",
-  "version": "0.1.0",
+  "version": "1.0.0-alpha.1",
   "description": "TypeScript SDK for the Neural Protocol Suite (NPS)",
   "type": "module",
   "main": "dist/index.js",
