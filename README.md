@@ -112,6 +112,20 @@ const status = await client.wait(taskId, { timeoutMs: 30_000 });
 console.log(status.state, status.aggregatedResult);
 ```
 
+## API Reference
+
+Full class and method reference lives under [`doc/`](./doc/):
+
+| Subpath | Description | Reference |
+|---------|-------------|-----------|
+| —                                   | Overview, install, minimal example             | [`doc/overview.md`](./doc/overview.md) |
+| `@labacacia/nps-sdk/core`           | Frame header, codec, anchor cache, exceptions | [`doc/nps-sdk.core.md`](./doc/nps-sdk.core.md) |
+| `@labacacia/nps-sdk/ncp`            | NCP frames + handshake + stream manager       | [`doc/nps-sdk.ncp.md`](./doc/nps-sdk.ncp.md) |
+| `@labacacia/nps-sdk/nwp`            | `QueryFrame`, `ActionFrame`, `NwpClient`      | [`doc/nps-sdk.nwp.md`](./doc/nps-sdk.nwp.md) |
+| `@labacacia/nps-sdk/nip`            | `IdentFrame`, `TrustFrame`, `RevokeFrame`, `NipIdentity` | [`doc/nps-sdk.nip.md`](./doc/nps-sdk.nip.md) |
+| `@labacacia/nps-sdk/ndp`            | NDP frames + `InMemoryNdpRegistry` + validator | [`doc/nps-sdk.ndp.md`](./doc/nps-sdk.ndp.md) |
+| `@labacacia/nps-sdk/nop`            | DAG model, NOP frames, `NopClient`            | [`doc/nps-sdk.nop.md`](./doc/nps-sdk.nop.md) |
+
 ## Package Exports
 
 ```typescript
