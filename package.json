@@ -1,0 +1,47 @@
+{
+  "name": "@labacacia/nps-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the Neural Protocol Suite (NPS)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
+    },
+    "./ncp": {
+      "import": "./dist/ncp/index.js",
+      "types": "./dist/ncp/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/labacacia/nps.git",
+    "directory": "impl/typescript"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "^3.0.0",
+    "canonicalize": "^2.0.0",
+    "fast-json-patch": "^3.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.1.0"
+  }
+}

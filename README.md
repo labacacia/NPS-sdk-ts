@@ -1,2 +1,153 @@
-# NPS-sdk-ts
-NPS is a complete web infrastructure protocol suite designed for AI Agents and models. It consists of five sub-protocols covering AI communication, web access, identity, node discovery, and multi-agent orchestration.
+# @labacacia/nps-sdk — TypeScript / Node.js
+
+TypeScript SDK for the **Neural Protocol Suite** (NPS) — a protocol suite designed for AI Agents.  
+Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-source ecosystem.
+
+## Status
+
+**v0.1.0 — Phase 2** · 5 protocols · 139 tests · ≥ 98% coverage
+
+| Protocol | Class | Status |
+|----------|-------|--------|
+| NCP — Neural Communication Protocol | Framing, codec | ✅ |
+| NWP — Neural Web Protocol | `NwpClient` | ✅ |
+| NIP — Neural Identity Protocol | `NipIdentity` | ✅ |
+| NDP — Neural Discovery Protocol | `InMemoryNdpRegistry`, `NdpAnnounceValidator` | ✅ |
+| NOP — Neural Orchestration Protocol | `NopClient` | ✅ |
+
+## Installation
+
+```bash
+npm install @labacacia/nps-sdk
+```
+
+> **Peer requirement:** Node.js 18+
+
+## Quick Start
+
+### NWP — query a node
+
+```typescript
+import { NwpClient, QueryFrame } from "@labacacia/nps-sdk/nwp";
+
+const client = new NwpClient("http://node.example.com:17433");
+const caps   = await client.query(new QueryFrame("sha256:<anchor-id>", { active: true }, 20));
+console.log(caps.count, caps.data);
+```
+
+### NWP — stream results
+
+```typescript
+for await (const chunk of client.stream(new QueryFrame("sha256:<anchor-id>"))) {
+  console.log(chunk.seq, chunk.data);
+}
+```
+
+### NWP — invoke an action
+
+```typescript
+import { ActionFrame } from "@labacacia/nps-sdk/nwp";
+
+const result = await client.invoke(new ActionFrame("summarise", { maxTokens: 500 }));
+```
+
+### NIP — Ed25519 identity
+
+```typescript
+import { NipIdentity } from "@labacacia/nps-sdk/nip";
+
+// Generate and persist
+const id = NipIdentity.generate();
+id.save("./my-key.json", process.env.KEY_PASS!);
+
+// Load and sign
+const loaded = NipIdentity.load("./my-key.json", process.env.KEY_PASS!);
+const sig    = loaded.sign({ action: "announce", nid: "urn:nps:node:example.com:data" });
+const ok     = loaded.verify({ action: "announce", nid: "urn:nps:node:example.com:data" }, sig);
+```
+
+### NDP — registry and signature validation
+
+```typescript
+import { InMemoryNdpRegistry, NdpAnnounceValidator } from "@labacacia/nps-sdk/ndp";
+import { AnnounceFrame } from "@labacacia/nps-sdk/ndp";
+
+const registry  = new InMemoryNdpRegistry();
+const validator = new NdpAnnounceValidator();
+validator.registerPublicKey(nid, identity.pubKeyString);
+
+registry.announce(frame);
+const resolved = registry.resolve("nwp://example.com/data/items");
+```
+
+### NOP — submit and wait for a task
+
+```typescript
+import { NopClient, TaskFrame } from "@labacacia/nps-sdk/nop";
+
+const client = new NopClient("http://orchestrator.example.com:17433");
+const dag    = {
+  nodes: [{ id: "classify", action: "classify-text", agent: "urn:nps:node:ml.example.com:classifier" }],
+  edges: [],
+};
+
+const taskId = await client.submit(new TaskFrame("my-task-1", dag));
+const status = await client.wait(taskId, { timeoutMs: 30_000 });
+console.log(status.state, status.aggregatedResult);
+```
+
+## Package Exports
+
+```typescript
+import { ... } from "@labacacia/nps-sdk";           // everything
+import { ... } from "@labacacia/nps-sdk/core";       // codec, frames, registry, cache
+import { ... } from "@labacacia/nps-sdk/ncp";        // AnchorFrame, CapsFrame, StreamFrame, …
+import { ... } from "@labacacia/nps-sdk/nwp";        // NwpClient, QueryFrame, ActionFrame
+import { ... } from "@labacacia/nps-sdk/nip";        // NipIdentity, IdentFrame, TrustFrame, RevokeFrame
+import { ... } from "@labacacia/nps-sdk/ndp";        // InMemoryNdpRegistry, NdpAnnounceValidator, AnnounceFrame, …
+import { ... } from "@labacacia/nps-sdk/nop";        // NopClient, NopTaskStatus, TaskFrame, …
+```
+
+## NCP Codec
+
+The codec layer supports dual-tier encoding and direct wire-format manipulation:
+
+```typescript
+import { NpsFrameCodec, EncodingTier } from "@labacacia/nps-sdk/core";
+import { createDefaultRegistry } from "@labacacia/nps-sdk";
+
+const codec = new NpsFrameCodec(createDefaultRegistry());
+
+// Encode (defaults to MsgPack)
+const wire = codec.encode(frame);
+
+// Encode as JSON (debugging / interop)
+const json = codec.encode(frame, { overrideTier: EncodingTier.JSON });
+
+// Decode
+const decoded = codec.decode(wire);
+
+// Peek at the header without decoding the payload
+const header = NpsFrameCodec.peekHeader(wire);
+console.log(header.frameType, header.isExtended, header.payloadLength);
+```
+
+## Development
+
+```bash
+# Install (no symlinks required on restricted filesystems)
+npm install --no-bin-links
+
+# Test
+node node_modules/vitest/vitest.mjs run
+
+# Test + coverage
+node node_modules/vitest/vitest.mjs run --coverage
+
+# Build (ESM + CJS)
+node node_modules/tsup/dist/cli-default.js
+```
+
+## License
+
+Apache 2.0 — see [LICENSE](../../LICENSE)
