@@ -1,3 +1,5 @@
+English | [中文版](./nps-sdk.ncp.cn.md)
+
 # `@labacacia/nps-sdk/ncp` — Class and Method Reference
 
 > Spec: [NPS-1 NCP v0.4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md)
