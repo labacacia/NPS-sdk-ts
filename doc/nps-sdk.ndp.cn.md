@@ -1,18 +1,17 @@
-English | [中文版](./nps-sdk.ndp.cn.md)
+[English Version](./nps-sdk.ndp.md) | 中文版
 
-# `@labacacia/nps-sdk/ndp` — Class and Method Reference
+# `@labacacia/nps-sdk/ndp` — 类与方法参考
 
-> Spec: [NPS-4 NDP v0.2](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md)
+> 规范：[NPS-4 NDP v0.2](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md)
 
-NDP is the discovery layer — the NPS analogue of DNS. This module provides
-the three NDP frame types, a thread-safe in-memory registry with lazy
-TTL eviction, and an announce-signature validator.
+NDP 是发现层 —— NPS 对应 DNS 的组件。本模块提供三种 NDP 帧类型、
+带惰性 TTL 过期的线程安全内存注册表，以及 announce 签名校验器。
 
 ---
 
-## Table of contents
+## 目录
 
-- [Supporting interfaces](#supporting-interfaces)
+- [辅助接口](#辅助接口)
 - [`AnnounceFrame` (0x30)](#announceframe-0x30)
 - [`ResolveFrame` (0x31)](#resolveframe-0x31)
 - [`GraphFrame` (0x32)](#graphframe-0x32)
@@ -22,7 +21,7 @@ TTL eviction, and an announce-signature validator.
 
 ---
 
-## Supporting interfaces
+## 辅助接口
 
 ```typescript
 interface NdpAddress {
@@ -41,7 +40,7 @@ interface NdpGraphNode {
 interface NdpResolveResult {
   host:             string;
   port:             number;
-  ttl:              number;                // seconds
+  ttl:              number;                // 秒
   certFingerprint?: string;                // "sha256:{hex}"
 }
 ```
@@ -50,7 +49,7 @@ interface NdpResolveResult {
 
 ## `AnnounceFrame` (0x30)
 
-Publishes a node's physical reachability and TTL (NPS-4 §3.1).
+发布节点的物理可达性与 TTL（NPS-4 §3.1）。
 
 ```typescript
 class AnnounceFrame {
@@ -61,32 +60,31 @@ class AnnounceFrame {
     public readonly nid:          string,
     public readonly addresses:    readonly NdpAddress[],
     public readonly capabilities: readonly string[],
-    public readonly ttl:          number,          // 0 = orderly shutdown
+    public readonly ttl:          number,          // 0 = 有序下线
     public readonly timestamp:    string,          // ISO 8601 UTC
     public readonly signature:    string,          // "ed25519:{base64}"
     public readonly nodeType?:    string,
   );
 
-  unsignedDict(): Record<string, unknown>;   // signing payload (no signature)
+  unsignedDict(): Record<string, unknown>;   // 签名 payload（无 signature）
   toDict():        Record<string, unknown>;
 
   static fromDict(data: Record<string, unknown>): AnnounceFrame;
 }
 ```
 
-Signing workflow:
+签名流程：
 
-1. Call `frame.unsignedDict()` — this strips `signature`.
-2. Sign with `NipIdentity.sign(dict)` using the NID's own private key
-   (the same key backing its `IdentFrame`).
-3. Publishing `ttl = 0` MUST be done before orderly shutdown so that
-   subscribers evict the entry.
+1. 调用 `frame.unsignedDict()` —— 剥离 `signature`。
+2. 用 `NipIdentity.sign(dict)` 以该 NID 自己的私钥签名（与支持其
+   `IdentFrame` 的相同密钥）。
+3. `ttl = 0` **必须**在有序下线前发布，以便订阅者清除条目。
 
 ---
 
 ## `ResolveFrame` (0x31)
 
-Request / response envelope for resolving an `nwp://` URL.
+解析 `nwp://` URL 的请求 / 响应信封。
 
 ```typescript
 class ResolveFrame {
@@ -96,7 +94,7 @@ class ResolveFrame {
   constructor(
     public readonly target:        string,           // "nwp://api.example.com/products"
     public readonly requesterNid?: string,
-    public readonly resolved?:     NdpResolveResult, // populated on response
+    public readonly resolved?:     NdpResolveResult, // 响应时填充
   );
 
   toDict(): Record<string, unknown>;
@@ -104,14 +102,13 @@ class ResolveFrame {
 }
 ```
 
-JSON tier is preferred for resolve traffic — it's low-volume and
-human-debugged.
+Resolve 流量首选 JSON tier —— 量小且便于人类调试。
 
 ---
 
 ## `GraphFrame` (0x32)
 
-Topology sync between registries.
+注册表之间的拓扑同步。
 
 ```typescript
 class GraphFrame {
@@ -119,9 +116,9 @@ class GraphFrame {
   readonly preferredTier: EncodingTier.MSGPACK;
 
   constructor(
-    public readonly seq:         number,                   // strictly monotonic per publisher
+    public readonly seq:         number,                   // 每个发布者严格单调
     public readonly initialSync: boolean,
-    public readonly nodes?:      readonly NdpGraphNode[],  // full snapshot
+    public readonly nodes?:      readonly NdpGraphNode[],  // 全量快照
     public readonly patch?:      readonly Record<string, unknown>[], // RFC 6902 JSON Patch
   );
 
@@ -130,19 +127,18 @@ class GraphFrame {
 }
 ```
 
-Gaps in `seq` MUST trigger a re-sync request signalled with
-`NDP-GRAPH-SEQ-GAP`.
+`seq` 跳号**必须**触发重新同步请求，信号为 `NDP-GRAPH-SEQ-GAP`。
 
 ---
 
 ## `InMemoryNdpRegistry`
 
-Thread-safe, TTL-evicting registry. Expiry is evaluated **lazily** on
-every read — there is no background timer.
+线程安全、按 TTL 过期的注册表。过期是在每次读取时**惰性**评估 ——
+没有后台定时器。
 
 ```typescript
 class InMemoryNdpRegistry {
-  // Replaceable for deterministic tests
+  // 为确定性测试可替换
   clock: () => number;
 
   announce(frame: AnnounceFrame): void;
@@ -154,38 +150,37 @@ class InMemoryNdpRegistry {
 }
 ```
 
-### Behaviour
+### 行为
 
-- `announce` with `ttl === 0` immediately evicts the NID; otherwise the
-  entry is inserted / refreshed with absolute expiry `clock() + ttl*1000`.
-- `resolve` scans live entries for the first NID covering `target` and
-  returns its first advertised address wrapped in `NdpResolveResult`.
-- `getByNid` does exact NID lookup with on-demand purge.
-- Override `clock` in tests: `registry.clock = () => 1000_000;`
+- `announce` 若 `ttl === 0` 立即清除该 NID；否则以绝对过期
+  `clock() + ttl*1000` 插入 / 刷新条目。
+- `resolve` 扫描活跃条目，找到第一个覆盖 `target` 的 NID，返回其
+  第一个广告地址包装为 `NdpResolveResult`。
+- `getByNid` 精确 NID 查询，按需清理。
+- 测试中覆写 `clock`：`registry.clock = () => 1000_000;`
 
-### `nwpTargetMatchesNid(nid, target)` *(static)*
+### `nwpTargetMatchesNid(nid, target)` *(静态)*
 
-The NID ↔ target covering rule:
+NID ↔ target 覆盖规则：
 
 ```
 NID:    urn:nps:node:{authority}:{name}
 Target: nwp://{authority}/{name}[/subpath]
 ```
 
-A node NID covers a target when:
+节点 NID 覆盖某 target 的条件：
 
-1. The target scheme is `nwp://`.
-2. The NID authority equals the target authority (exact, case-sensitive).
-3. The target path equals `{name}` or starts with `{name}/`.
+1. Target scheme 为 `nwp://`。
+2. NID authority 等于 target authority（精确，区分大小写）。
+3. Target path 等于 `{name}` 或以 `{name}/` 开头。
 
-Returns `false` for malformed inputs rather than throwing.
+输入格式错误时返回 `false` 而非抛异常。
 
 ---
 
 ## `NdpAnnounceValidator`
 
-Verifies an `AnnounceFrame.signature` using a registered Ed25519 public
-key.
+使用已注册的 Ed25519 公钥校验 `AnnounceFrame.signature`。
 
 ```typescript
 class NdpAnnounceValidator {
@@ -198,20 +193,19 @@ class NdpAnnounceValidator {
 }
 ```
 
-`validate` (NPS-4 §7.1):
+`validate`（NPS-4 §7.1）：
 
-1. Looks up `frame.nid` in the registered keys. Missing →
-   `NdpAnnounceResult.fail("NDP-ANNOUNCE-NID-MISMATCH", …)`. Expected
-   workflow: verify the announcer's `IdentFrame` first, then register
-   its `pubKeyString` here.
-2. Rebuilds the signing payload from `frame.unsignedDict()` using the
-   sorted-keys canonical form.
-3. Runs Ed25519 verify.
-4. Returns `NdpAnnounceResult.ok()` on success, or
-   `NdpAnnounceResult.fail("NDP-ANNOUNCE-SIG-INVALID", …)` on failure.
+1. 在已注册密钥中查找 `frame.nid`。缺失 →
+   `NdpAnnounceResult.fail("NDP-ANNOUNCE-NID-MISMATCH", …)`。期望的
+   工作流程：先校验广告方的 `IdentFrame`，然后把其 `pubKeyString`
+   注册到此处。
+2. 用键排序规范形式从 `frame.unsignedDict()` 重建签名 payload。
+3. 运行 Ed25519 verify。
+4. 成功返回 `NdpAnnounceResult.ok()`；失败返回
+   `NdpAnnounceResult.fail("NDP-ANNOUNCE-SIG-INVALID", …)`。
 
-The encoded key MUST use the `ed25519:{hex}` form produced by
-`NipIdentity.pubKeyString`.
+编码后的密钥**必须**使用 `NipIdentity.pubKeyString` 产生的
+`ed25519:{hex}` 形式。
 
 ---
 
@@ -232,7 +226,7 @@ const NdpAnnounceResult: {
 
 ---
 
-## End-to-end example
+## 端到端示例
 
 ```typescript
 import { NipIdentity } from "@labacacia/nps-sdk/nip";
@@ -243,7 +237,7 @@ import {
 const id  = NipIdentity.generate();
 const nid = "urn:nps:node:api.example.com:products";
 
-// Build & sign the announce
+// 构造并签名 announce
 const unsigned = new AnnounceFrame(
   nid,
   [{ host: "10.0.0.5", port: 17433, protocol: "nwp+tls" }],
@@ -259,7 +253,7 @@ const signed    = new AnnounceFrame(
   unsigned.ttl,  unsigned.timestamp, signature, unsigned.nodeType,
 );
 
-// Validate + register
+// 校验 + 注册
 const validator = new NdpAnnounceValidator();
 validator.registerPublicKey(nid, id.pubKeyString);
 const result = validator.validate(signed);
