@@ -1,19 +1,18 @@
-English | [中文版](./nps-sdk.nop.cn.md)
+[English Version](./nps-sdk.nop.md) | 中文版
 
-# `@labacacia/nps-sdk/nop` — Class and Method Reference
+# `@labacacia/nps-sdk/nop` — 类与方法参考
 
-> Spec: [NPS-5 NOP v0.3](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md)
+> 规范：[NPS-5 NOP v0.3](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md)
 
-NOP is the orchestration layer — submit a DAG of delegated subtasks, wait
-for completion, stream results back. This module ships the four NOP
-frames (0x40–0x43), the task model (`TaskDag`, `DagNode`, `DagEdge`,
-`RetryPolicy`, `TaskContext`), and the async `NopClient` + `NopTaskStatus`.
+NOP 是编排层 —— 提交一个委托子任务 DAG、等待完成、流式拉回结果。
+本模块提供四个 NOP 帧（0x40–0x43）、任务模型（`TaskDag`、`DagNode`、
+`DagEdge`、`RetryPolicy`、`TaskContext`），以及异步 `NopClient` + `NopTaskStatus`。
 
 ---
 
-## Table of contents
+## 目录
 
-- [Enums & constants](#enums--constants)
+- [枚举与常量](#枚举与常量)
 - [`RetryPolicy`](#retrypolicy)
 - [`TaskContext`](#taskcontext)
 - [`DagNode` / `DagEdge` / `TaskDag`](#dagnode--dagedge--taskdag)
@@ -26,7 +25,7 @@ frames (0x40–0x43), the task model (`TaskDag`, `DagNode`, `DagEdge`,
 
 ---
 
-## Enums & constants
+## 枚举与常量
 
 ```typescript
 enum TaskState {
@@ -45,8 +44,8 @@ enum BackoffStrategy   { FIXED = "fixed", LINEAR = "linear", EXPONENTIAL = "expo
 enum AggregateStrategy { MERGE = "merge", FIRST = "first", FASTEST_K = "fastest_k", ALL = "all" }
 ```
 
-Terminal states are `COMPLETED`, `FAILED`, `CANCELLED`. `NopTaskStatus.isTerminal`
-uses this set.
+终态为 `COMPLETED`、`FAILED`、`CANCELLED`。`NopTaskStatus.isTerminal`
+使用此集合。
 
 ---
 
@@ -56,22 +55,22 @@ uses this set.
 interface RetryPolicy {
   maxRetries:   number;
   backoff:      BackoffStrategy;
-  baseDelayMs?: number;   // default 1 000
-  maxDelayMs?:  number;   // default 30 000
+  baseDelayMs?: number;   // 默认 1 000
+  maxDelayMs?:  number;   // 默认 30 000
 }
 
 function computeDelayMs(policy: RetryPolicy, attempt: number): number;
 ```
 
-`computeDelayMs` computes the clamped delay for `attempt` (0-indexed):
+`computeDelayMs` 计算 `attempt`（从 0 起）的限幅延迟：
 
-| Backoff       | Formula |
-|---------------|---------|
+| Backoff       | 公式 |
+|---------------|------|
 | `FIXED`       | `baseDelayMs` |
 | `LINEAR`      | `baseDelayMs * (attempt + 1)` |
 | `EXPONENTIAL` | `baseDelayMs * 2**attempt` |
 
-The result is capped at `maxDelayMs`.
+结果上限为 `maxDelayMs`。
 
 ---
 
@@ -81,7 +80,7 @@ The result is capped at `maxDelayMs`.
 interface TaskContext {
   sessionKey?:   string;
   requesterNid?: string;
-  traceId?:      string;        // OpenTelemetry-shaped trace id
+  traceId?:      string;        // OpenTelemetry 风格的 trace id
 }
 ```
 
@@ -93,12 +92,12 @@ interface TaskContext {
 interface DagNode {
   id:             string;
   action:         string;
-  agent:          string;                   // target NID
-  inputFrom?:     readonly string[];        // upstream node ids
-  inputMapping?:  Record<string, string>;   // optional JSONPath rewrites
+  agent:          string;                   // 目标 NID
+  inputFrom?:     readonly string[];        // 上游节点 id
+  inputMapping?:  Record<string, string>;   // 可选 JSONPath 改写
   timeoutMs?:     number;
   retryPolicy?:   RetryPolicy;
-  condition?:     string;                   // JSONPath-style guard, e.g. "$.classify.score > 0.7"
+  condition?:     string;                   // JSONPath 风格守卫，如 "$.classify.score > 0.7"
   minRequired?:   number;                   // K-of-N fan-in
 }
 
@@ -113,15 +112,14 @@ interface TaskDag {
 }
 ```
 
-Per the spec: max 32 nodes per DAG, max 3 levels of delegate chain, max
-timeout 3 600 000 ms (1 h). Exceeding any of those limits is rejected by
-the orchestrator (NPS-5 §8.2).
+按规范：每个 DAG 最多 32 节点、委托链最多 3 层、超时上限
+3 600 000 ms（1 小时）。超过上述任一限制将被编排器拒绝（NPS-5 §8.2）。
 
 ---
 
 ## `TaskFrame` (0x40)
 
-Submit a DAG for execution.
+提交 DAG 供执行。
 
 ```typescript
 class TaskFrame {
@@ -132,7 +130,7 @@ class TaskFrame {
     public readonly taskId:       string,
     public readonly dag:          TaskDag,
     public readonly timeoutMs?:   number,
-    public readonly callbackUrl?: string,    // SSRF-validated by the orchestrator
+    public readonly callbackUrl?: string,    // 编排器做 SSRF 校验
     public readonly context?:     TaskContext,
     public readonly priority?:    TaskPriority,
     public readonly depth?:       number,
@@ -147,7 +145,7 @@ class TaskFrame {
 
 ## `DelegateFrame` (0x41)
 
-Per-node invocation emitted by the orchestrator to each agent.
+编排器向每个 agent 发出的逐节点调用。
 
 ```typescript
 class DelegateFrame {
@@ -173,7 +171,7 @@ class DelegateFrame {
 
 ## `SyncFrame` (0x42)
 
-Fan-in barrier — waits for K-of-N upstream subtasks.
+Fan-in 屏障 —— 等待 K-of-N 上游子任务。
 
 ```typescript
 class SyncFrame {
@@ -184,7 +182,7 @@ class SyncFrame {
     public readonly taskId:      string,
     public readonly syncId:      string,
     public readonly waitFor:     readonly string[],
-    public readonly minRequired: number = 0,    // 0 = all of waitFor
+    public readonly minRequired: number = 0,    // 0 = waitFor 全部
     public readonly aggregate:   AggregateStrategy | string = "merge",
     public readonly timeoutMs?:  number,
   );
@@ -194,18 +192,18 @@ class SyncFrame {
 }
 ```
 
-`minRequired` semantics:
+`minRequired` 语义：
 
-| Value | Meaning |
-|-------|---------|
-| `0`   | Wait for all of `waitFor` (strict fan-in). |
-| `K`   | Proceed as soon as K upstream subtasks have completed. |
+| 值    | 含义 |
+|-------|------|
+| `0`   | 等待 `waitFor` 中所有项（严格 fan-in）。 |
+| `K`   | 只要 K 个上游子任务完成即继续。 |
 
 ---
 
 ## `AlignStreamFrame` (0x43)
 
-Streaming progress / partial result frame for a delegated subtask.
+委托子任务的流式进度 / 部分结果帧。
 
 ```typescript
 interface StreamError {
@@ -234,27 +232,26 @@ class AlignStreamFrame {
 }
 ```
 
-`AlignStreamFrame` replaces the deprecated `AlignFrame (0x05)` — it
-carries task context (`taskId` + `subtaskId`) and is bound to a specific
-`senderNid`.
+`AlignStreamFrame` 替代已弃用的 `AlignFrame (0x05)` —— 它携带
+任务上下文（`taskId` + `subtaskId`）且绑定到特定 `senderNid`。
 
 ---
 
 ## `NopClient`
 
-Async HTTP client for an NOP orchestrator.
+NOP 编排器的异步 HTTP 客户端。
 
 ```typescript
 class NopClient {
   constructor(
     baseUrl: string,
     options?: {
-      defaultTier?: EncodingTier;  // default MSGPACK
-      registry?:    FrameRegistry; // default NCP + NOP frames
+      defaultTier?: EncodingTier;  // 默认 MSGPACK
+      registry?:    FrameRegistry; // 默认 NCP + NOP 帧
     },
   );
 
-  async submit(frame: TaskFrame): Promise<string>;              // returns taskId
+  async submit(frame: TaskFrame): Promise<string>;              // 返回 taskId
   async getStatus(taskId: string): Promise<NopTaskStatus>;
   async cancel(taskId: string): Promise<void>;
   async wait(
@@ -264,23 +261,23 @@ class NopClient {
 }
 ```
 
-### HTTP routes
+### HTTP 路由
 
-| Method      | Path                       |
+| 方法        | 路径                       |
 |-------------|----------------------------|
 | `submit`    | `POST /task`               |
 | `getStatus` | `GET  /task/{taskId}`      |
 | `cancel`    | `POST /task/{taskId}/cancel` |
-| `wait`      | polls `getStatus` until terminal or timeout |
+| `wait`      | 轮询 `getStatus` 直至终态或超时 |
 
-`wait` defaults: `pollIntervalMs = 1000`, `timeoutMs = 30 000`. It throws
-an `Error` when the deadline expires without reaching a terminal state.
+`wait` 默认：`pollIntervalMs = 1000`、`timeoutMs = 30 000`。若截止时间
+到达仍未抵达终态则抛 `Error`。
 
 ---
 
 ## `NopTaskStatus`
 
-Thin view over the orchestrator's JSON response.
+编排器 JSON 响应的薄视图。
 
 ```typescript
 class NopTaskStatus {
@@ -295,12 +292,12 @@ class NopTaskStatus {
 }
 ```
 
-`raw` gives you the untouched payload if you need orchestrator-specific
-fields that aren't first-class on `NopTaskStatus`.
+若需要 `NopTaskStatus` 上没有一等支持的编排器专属字段，`raw` 提供
+未经处理的原始 payload。
 
 ---
 
-## End-to-end example
+## 端到端示例
 
 ```typescript
 import {

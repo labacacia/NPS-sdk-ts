@@ -1,24 +1,24 @@
-English | [中文版](./nps-sdk.nip.cn.md)
+[English Version](./nps-sdk.nip.md) | 中文版
 
-# `@labacacia/nps-sdk/nip` — Class and Method Reference
+# `@labacacia/nps-sdk/nip` — 类与方法参考
 
-> Spec: [NPS-3 NIP v0.2](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md)
+> 规范：[NPS-3 NIP v0.2](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md)
 
-NIP is the TLS/PKI of NPS. This module exposes the three identity frames
-(`IdentFrame`, `TrustFrame`, `RevokeFrame`), the metadata interface, and
-the `NipIdentity` helper that owns an Ed25519 keypair with optional
-AES-256-GCM + PBKDF2-SHA256 key-file encryption.
+NIP 是 NPS 的 TLS/PKI。本模块暴露三个身份帧
+（`IdentFrame`、`TrustFrame`、`RevokeFrame`）、元数据接口，
+以及拥有 Ed25519 密钥对（可选 AES-256-GCM + PBKDF2-SHA256 密钥文件加密）的
+`NipIdentity` 辅助类。
 
 ---
 
-## Table of contents
+## 目录
 
 - [`IdentMetadata`](#identmetadata)
 - [`IdentFrame` (0x20)](#identframe-0x20)
 - [`TrustFrame` (0x21)](#trustframe-0x21)
 - [`RevokeFrame` (0x22)](#revokeframe-0x22)
 - [`NipIdentity`](#nipidentity)
-- [Canonical JSON & signing format](#canonical-json--signing-format)
+- [规范化 JSON 与签名格式](#规范化-json-与签名格式)
 
 ---
 
@@ -34,16 +34,14 @@ interface IdentMetadata {
 }
 ```
 
-Attached to `IdentFrame.metadata`. Excluded from the signed payload
-produced by `unsignedDict()` — metadata is runtime-mutable and not part
-of the agent's identity.
+附在 `IdentFrame.metadata`。由 `unsignedDict()` 产生的签名 payload
+**排除**此字段 —— 元数据是运行时可变的，不属于 agent 身份本身。
 
 ---
 
 ## `IdentFrame` (0x20)
 
-Agent identity certificate. Sent as the opening frame on any
-authenticated session.
+Agent 身份证书。作为任何认证 session 的开场帧发送。
 
 ```typescript
 class IdentFrame {
@@ -57,22 +55,21 @@ class IdentFrame {
     public readonly signature: string,      // "ed25519:{base64}"
   );
 
-  unsignedDict(): Record<string, unknown>;   // { nid, pub_key, metadata } — signing payload
+  unsignedDict(): Record<string, unknown>;   // { nid, pub_key, metadata } — 签名 payload
   toDict():        Record<string, unknown>;   // unsignedDict + signature
 
   static fromDict(data: Record<string, unknown>): IdentFrame;
 }
 ```
 
-`unsignedDict()` is the canonical signing payload — it omits the
-`signature` field. Pair it with `NipIdentity.sign()` to produce the
-self-signed `signature`.
+`unsignedDict()` 是规范签名 payload —— 它省略 `signature` 字段。
+与 `NipIdentity.sign()` 配对使用以产生自签名 `signature`。
 
 ---
 
 ## `TrustFrame` (0x21)
 
-Inter-CA trust certificate.
+跨 CA 信任证书。
 
 ```typescript
 class TrustFrame {
@@ -96,7 +93,7 @@ class TrustFrame {
 
 ## `RevokeFrame` (0x22)
 
-Certificate revocation.
+证书吊销。
 
 ```typescript
 class RevokeFrame {
@@ -105,7 +102,7 @@ class RevokeFrame {
 
   constructor(
     public readonly nid:        string,
-    public readonly reason?:    string,     // e.g. "key_compromise"
+    public readonly reason?:    string,     // 如 "key_compromise"
     public readonly revokedAt?: string,     // ISO 8601 UTC
   );
 
@@ -114,39 +111,39 @@ class RevokeFrame {
 }
 ```
 
-Signed by the issuing CA. Verifiers MUST refuse any `IdentFrame` whose
-`nid` is covered by a valid `RevokeFrame`.
+由签发 CA 签名。验证者**必须**拒绝其 `nid` 被有效 `RevokeFrame` 覆盖的
+任何 `IdentFrame`。
 
 ---
 
 ## `NipIdentity`
 
-Ed25519 keypair manager with optional encrypted-keyfile persistence.
-Built on `@noble/ed25519` + `node:crypto`.
+Ed25519 密钥对管理器，可选加密密钥文件持久化。基于
+`@noble/ed25519` + `node:crypto`。
 
 ```typescript
 class NipIdentity {
-  // Factory
+  // 工厂
   static generate(): NipIdentity;
   static fromPrivateKey(privKey: Uint8Array): NipIdentity;
   static load(path: string, passphrase: string): NipIdentity;
 
-  // Persist
+  // 持久化
   save(path: string, passphrase: string): void;
 
-  // Signing
+  // 签名
   sign(payload: Record<string, unknown>): string;            // "ed25519:{base64}"
   verify(payload: Record<string, unknown>, signature: string): boolean;
 
-  // Public key access
-  readonly pubKey:        Uint8Array;          // 32 bytes
+  // 公钥访问
+  readonly pubKey:        Uint8Array;          // 32 字节
   readonly pubKeyString:  string;              // "ed25519:{hex}"
 }
 ```
 
-### Key-file format
+### 密钥文件格式
 
-`save` / `load` write a JSON envelope (versioned) containing:
+`save` / `load` 写入一个版本化的 JSON 信封，包含：
 
 ```
 {
@@ -158,67 +155,63 @@ class NipIdentity {
 }
 ```
 
-Key derivation: **PBKDF2-SHA256**, 600 000 iterations.
-Cipher: **AES-256-GCM** — the 16-byte auth tag is appended to the
-ciphertext inside the `ciphertext` field.
+密钥派生：**PBKDF2-SHA256**，600 000 次迭代。
+加密：**AES-256-GCM** —— 16 字节认证 tag 追加到 `ciphertext` 字段内的
+密文后。
 
 ### `generate()`
 
-Produces a fresh Ed25519 keypair. Does not touch disk.
+生成新的 Ed25519 密钥对。不接触磁盘。
 
 ### `fromPrivateKey(priv)`
 
-Wraps an existing 32-byte Ed25519 private key (derives the matching
-public key).
+包装已有的 32 字节 Ed25519 私钥（派生匹配的公钥）。
 
 ### `load(path, passphrase)`
 
-Reads & decrypts a previously saved keyfile. Throws if the JSON envelope
-is malformed, if the auth tag is invalid, or if the passphrase is wrong.
+读取并解密先前保存的密钥文件。若 JSON 信封格式错误、auth tag
+无效，或 passphrase 错误，则抛异常。
 
 ### `save(path, passphrase)`
 
-Encrypts and writes the keypair to `path`. The file is overwritten if it
-exists — back up first.
+加密并写入密钥对到 `path`。文件已存在时被覆盖 —— 先备份。
 
 ### `sign(payload)` / `verify(payload, signature)`
 
-Canonicalises `payload` (sorted keys, compact separators), runs Ed25519,
-and emits `"ed25519:{base64}"`. `verify` returns `false` on any failure —
-it never throws.
+规范化 `payload`（键排序、紧凑分隔符），运行 Ed25519，发出
+`"ed25519:{base64}"`。`verify` 任何失败时返回 `false` —— 从不抛异常。
 
 ---
 
-## Canonical JSON & signing format
+## 规范化 JSON 与签名格式
 
-The SDK normalises signing payloads with:
+SDK 以如下方式规范化签名 payload：
 
 ```js
 JSON.stringify(payload, Object.keys(payload).sort());
 ```
 
-- Keys are sorted lexicographically at every level.
-- `undefined` keys are dropped implicitly by `JSON.stringify`.
-- No whitespace between tokens.
-- Output UTF-8 bytes feed the Ed25519 primitive.
+- 每一层键按字典序排序。
+- `undefined` 键由 `JSON.stringify` 隐式丢弃。
+- token 之间无空白。
+- 输出 UTF-8 字节馈入 Ed25519 原语。
 
-For `IdentFrame`, use `unsignedDict()` as the payload — it already omits
-`signature`.
+对 `IdentFrame`，将 `unsignedDict()` 作为 payload —— 它已省略 `signature`。
 
 ---
 
-## End-to-end example
+## 端到端示例
 
 ```typescript
 import {
   IdentFrame, IdentMetadata, NipIdentity,
 } from "@labacacia/nps-sdk/nip";
 
-// 1) One-off: create a keypair and persist it
+// 1) 一次性：创建密钥对并持久化
 const id = NipIdentity.generate();
 id.save("./agent.key", "correct horse battery");
 
-// 2) Build & sign an IdentFrame
+// 2) 构造并签名 IdentFrame
 const meta: IdentMetadata = {
   issuer:    "urn:nps:ca:example.com:root",
   issuedAt:  new Date().toISOString(),
@@ -236,7 +229,7 @@ const unsigned = new IdentFrame(
 const signature = id.sign(unsigned.unsignedDict());
 const signed    = new IdentFrame(unsigned.nid, unsigned.pubKey, meta, signature);
 
-// 3) Anyone with the same keypair (or equivalent pubKey) can verify
+// 3) 任何持有相同密钥对（或等价 pubKey）的一方均可验证
 const ok = id.verify(signed.unsignedDict(), signed.signature);
 // → true
 ```
