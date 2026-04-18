@@ -1,31 +1,30 @@
-English | [中文版](./nps-sdk.core.cn.md)
+[English Version](./nps-sdk.core.md) | 中文版
 
-# `@labacacia/nps-sdk/core` — Class and Method Reference
+# `@labacacia/nps-sdk/core` — 类与方法参考
 
-> Spec: [NPS-1 NCP v0.4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md)
+> 规范：[NPS-1 NCP v0.4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md)
 
-Wire-level primitives: frame header parsing, the codec pair
-(Tier-1 JSON / Tier-2 MsgPack), the anchor cache, error types, and
-canonical-JSON helpers used by NIP signing.
+线路层原语：帧头解析、编解码器对（Tier-1 JSON / Tier-2 MsgPack）、
+锚点缓存、错误类型，以及 NIP 签名使用的规范化 JSON 辅助函数。
 
 ---
 
-## Table of contents
+## 目录
 
-- [Frame types & constants](#frame-types--constants)
+- [帧类型与常量](#帧类型与常量)
 - [`FrameHeader`](#frameheader)
 - [`NpsFrameCodec`](#npsframecodec)
-- [Functional codec API](#functional-codec-api)
+- [函数式编解码 API](#函数式编解码-api)
 - [`FrameRegistry`](#frameregistry)
 - [`AnchorCache`](#anchorcache)
-- [Canonical JSON](#canonical-json)
-- [Exceptions](#exceptions)
-- [Status codes](#status-codes)
+- [规范化 JSON](#规范化-json)
+- [异常](#异常)
+- [状态码](#状态码)
 - [`CryptoProvider`](#cryptoprovider)
 
 ---
 
-## Frame types & constants
+## 帧类型与常量
 
 ```typescript
 export enum FrameType {
@@ -59,19 +58,19 @@ export const FrameFlags = {
   EXT:           0x80,
 } as const;
 
-export const DEFAULT_HEADER_SIZE  = 4;           // bytes
+export const DEFAULT_HEADER_SIZE  = 4;           // 字节
 export const EXTENDED_HEADER_SIZE = 8;
 export const DEFAULT_MAX_PAYLOAD  = 0xFFFF;      // 64 KiB − 1
 export const EXTENDED_MAX_PAYLOAD = 0xFFFF_FFFF; // 4 GiB − 1
 ```
 
-`Align (0x05)` is deprecated — use `AlignStream (0x43)` from NOP instead.
+`Align (0x05)` 已弃用 —— 请改用 NOP 的 `AlignStream (0x43)`。
 
 ---
 
 ## `FrameHeader`
 
-Parsed + serialisable wire header (NPS-1 §3.1).
+可解析 + 可序列化的线路帧头（NPS-1 §3.1）。
 
 ```typescript
 class FrameHeader {
@@ -81,26 +80,25 @@ class FrameHeader {
     public readonly payloadLength: number,
   );
 
-  readonly isExtended:   boolean;       // EXT bit
-  readonly headerSize:   number;        // 4 or 8
-  readonly encodingTier: EncodingTier;  // lower 2 bits
-  readonly isFinal:      boolean;       // bit 2
-  readonly isEncrypted:  boolean;       // bit 3
+  readonly isExtended:   boolean;       // EXT 位
+  readonly headerSize:   number;        // 4 或 8
+  readonly encodingTier: EncodingTier;  // 低 2 位
+  readonly isFinal:      boolean;       // 第 2 位
+  readonly isEncrypted:  boolean;       // 第 3 位
 
   static parse(buf: Uint8Array): FrameHeader;
   toBytes(): Uint8Array;
 }
 ```
 
-Default header: `[type][flags][len_be_u16]` (4 bytes).
-Extended header (`EXT=1`): `[type][flags][0 0][len_be_u32]` (8 bytes).
+默认帧头：`[type][flags][len_be_u16]`（4 字节）。
+扩展帧头（`EXT=1`）：`[type][flags][0 0][len_be_u32]`（8 字节）。
 
 ---
 
 ## `NpsFrameCodec`
 
-Top-level codec dispatching between Tier-1 JSON and Tier-2 MsgPack based on
-the flags byte.
+顶层编解码器，根据 flag 字节在 Tier-1 JSON 和 Tier-2 MsgPack 之间分派。
 
 ```typescript
 interface NpsFrame {
@@ -124,41 +122,38 @@ class NpsFrameCodec {
 
 ### `encode(frame, opts?)`
 
-Serialises the frame's `toDict()` via the chosen tier and prepends the
-header. Automatically sets `EXT=1` if the payload exceeds
-`DEFAULT_MAX_PAYLOAD`. For `StreamFrame`, `FINAL` flag is set when
-`isLast === true`; for every other frame it is always set.
+通过所选 tier 序列化帧的 `toDict()` 并前置帧头。当 payload
+超过 `DEFAULT_MAX_PAYLOAD` 时自动设置 `EXT=1`。对 `StreamFrame`，
+当 `isLast === true` 时设置 `FINAL` flag；其他每个帧都始终设置。
 
-Raises `NpsCodecError` when:
-- encoding fails,
-- the encoded payload exceeds `maxPayload` (default 65 535).
+以下情况抛 `NpsCodecError`：
+- 编码失败；
+- 编码后 payload 超过 `maxPayload`（默认 65 535）。
 
 ### `decode(wire)`
 
-Parses the header, slices the payload, resolves the frame class from the
-registry, and calls `fromDict(data)`.
+解析帧头、切出 payload、从注册表解析帧类、调用 `fromDict(data)`。
 
-### `peekHeader(wire)` *(static)*
+### `peekHeader(wire)`（静态）
 
-Returns the parsed header without decoding the payload — useful for
-routing, sizing, or dumping.
+返回解析后的帧头而不解码 payload —— 对路由、计长或转储很有用。
 
 ---
 
-## Functional codec API
+## 函数式编解码 API
 
-Re-exported from `@labacacia/nps-sdk/core`. Thin, allocation-light pair
-used by tests and tools that don't want a class instance.
+从 `@labacacia/nps-sdk/core` 重新导出。轻量、少分配的函数对，
+被测试和不希望持有类实例的工具使用。
 
 ```typescript
-// Tier-level helpers
+// Tier 级辅助
 function encodeJson(payload: unknown): Uint8Array;
 function decodeJson(bytes: Uint8Array): unknown;
 
 function encodeMsgPack(payload: unknown): Uint8Array;
 function decodeMsgPack(bytes: Uint8Array): unknown;
 
-// Full frame helpers
+// 完整帧辅助
 function encodeFrame(
   payload: unknown,
   options: {
@@ -174,12 +169,12 @@ function decodeFrame(
   buffer: Uint8Array,
   options?: { maxFramePayload?: number },
 ): {
-  header:        FrameHeader;   // the interface shape from frame-header.ts
+  header:        FrameHeader;   // 来自 frame-header.ts 的接口形态
   payload:       unknown;
   bytesConsumed: number;
 };
 
-// Low-level header I/O
+// 低层帧头 I/O
 function parseFrameHeader(buffer: Uint8Array, opts?: { max_frame_payload?: number }): FrameHeaderInterface;
 function writeFrameHeader(header: FrameHeaderInterface, buffer: Uint8Array): number;
 function buildFlags(options: {
@@ -187,21 +182,21 @@ function buildFlags(options: {
 }): number;
 ```
 
-Errors are raised as `NcpError` with a protocol code (e.g.
-`NCP-FRAME-FLAGS-INVALID`, `NCP-FRAME-PAYLOAD-TOO-LARGE`,
-`NCP-FRAME-PARSE-ERROR`).
+错误以 `NcpError` 抛出，并带协议错误码（如
+`NCP-FRAME-FLAGS-INVALID`、`NCP-FRAME-PAYLOAD-TOO-LARGE`、
+`NCP-FRAME-PARSE-ERROR`）。
 
 ---
 
 ## `FrameRegistry`
 
-Maps `FrameType` bytes to frame classes implementing `FrameClass.fromDict`.
-Used by `NpsFrameCodec.decode` to materialise typed instances.
+将 `FrameType` 字节映射到实现 `FrameClass.fromDict` 的帧类。
+`NpsFrameCodec.decode` 用它来实例化有类型的实例。
 
 ```typescript
 class FrameRegistry {
   register(frameType: FrameType, cls: FrameClass): void;
-  resolve(frameType: FrameType): FrameClass;  // throws NpsFrameError if unknown
+  resolve(frameType: FrameType): FrameClass;  // 未知类型抛 NpsFrameError
 }
 
 interface FrameClass {
@@ -209,23 +204,23 @@ interface FrameClass {
 }
 ```
 
-The root package exports two factories:
+根包导出两个工厂：
 
 ```typescript
 import { createDefaultRegistry, createFullRegistry } from "@labacacia/nps-sdk";
 
-createDefaultRegistry();   // NCP only — ANCHOR + DIFF + STREAM + CAPS + ERROR
+createDefaultRegistry();   // 仅 NCP —— ANCHOR + DIFF + STREAM + CAPS + ERROR
 createFullRegistry();      // NCP + NWP + NIP + NDP + NOP
 ```
 
-Use `createFullRegistry()` when you need the codec to decode arbitrary
-frames; the clients construct a suitable registry internally.
+当需要编解码器解码任意帧时使用 `createFullRegistry()`；客户端
+内部会构造合适的注册表。
 
 ---
 
 ## `AnchorCache`
 
-Bounded, TTL-aware schema cache (NPS-1 §5.3, §7.2, §9).
+有界、TTL 感知的 schema 缓存（NPS-1 §5.3、§7.2、§9）。
 
 ```typescript
 class AnchorCache {
@@ -233,39 +228,40 @@ class AnchorCache {
 
   set(frame: AnchorFrame): void;
   get(anchorId: string): AnchorFrame | null;
-  getRequired(anchorId: string): AnchorFrame;  // throws NcpError NCP-ANCHOR-NOT-FOUND
+  getRequired(anchorId: string): AnchorFrame;  // 抛 NcpError NCP-ANCHOR-NOT-FOUND
   readonly size: number;
 }
 ```
 
-### Behaviour
+### 行为
 
-- `ttl === 0` → frame is NOT cached (spec §4.1, "session-only").
-- Re-setting an anchor with a **different** schema throws
-  `NcpError("NCP-ANCHOR-ID-MISMATCH")` — poisoning detection (§7.2).
-- When the cache is full, the least-recently-accessed entry is evicted.
-- Expiry is evaluated on every `get()`; no background timer.
-- Override `getNow` for deterministic tests.
+- `ttl === 0` → 帧**不**被缓存（规范 §4.1，"仅本 session"）。
+- 用**不同** schema 重新 set 同一锚点会抛
+  `NcpError("NCP-ANCHOR-ID-MISMATCH")` —— 投毒检测（§7.2）。
+- 缓存满时，最近访问时间最早的条目被清除。
+- 过期在每次 `get()` 时评估；没有后台定时器。
+- 为可重现测试覆写 `getNow`。
 
 ---
 
-## Canonical JSON
+## 规范化 JSON
 
-Two distinct JSON normalisations ship with the SDK:
+SDK 提供两种不同的 JSON 规范化方案：
 
 ```typescript
 function jcsStringify(obj: unknown): string;     // RFC 8785 (JCS)
-function sortKeysStringify(obj: unknown): string; // sort keys, compact separators
+function sortKeysStringify(obj: unknown): string; // 按键排序、紧凑分隔符
 ```
 
-- `jcsStringify` is the canonical form used for `AnchorFrame.anchor_id`
-  hashing (SHA-256 over the JCS bytes).
-- `sortKeysStringify` mirrors Python's `json.dumps(sort_keys=True, separators=(",", ":"))`
-  and is used by NIP signing for cross-language parity.
+- `jcsStringify` 是 `AnchorFrame.anchor_id` 哈希所用的规范形式
+  （对 JCS 字节做 SHA-256）。
+- `sortKeysStringify` 镜像 Python 的
+  `json.dumps(sort_keys=True, separators=(",", ":"))`，NIP 签名
+  使用它以实现跨语言一致。
 
 ---
 
-## Exceptions
+## 异常
 
 ```typescript
 class NpsError           extends Error {}
@@ -278,13 +274,13 @@ class NpsStreamError     extends NpsError {}
 class NcpError extends Error { readonly code: string; }
 ```
 
-`NcpError` carries a spec error code (e.g. `NCP-STREAM-SEQ-GAP`). It is
-thrown by the functional codec, the stream manager, and the validators;
-`NpsError` subclasses are thrown by the class-based codec and cache.
+`NcpError` 携带规范错误码（如 `NCP-STREAM-SEQ-GAP`）。函数式
+编解码器、stream manager 和校验器抛它；基于类的编解码器和
+缓存抛 `NpsError` 子类。
 
 ---
 
-## Status codes
+## 状态码
 
 ```typescript
 import { NpsStatusCodes } from "@labacacia/nps-sdk/core";
@@ -295,17 +291,16 @@ NpsStatusCodes.NPS_STREAM_SEQ_GAP;         // "NPS-STREAM-SEQ-GAP"
 // …
 ```
 
-Constant bundle matching `spec/status-codes.md`. Use these whenever you
-need to emit an `ErrorFrame` or compare against the `status` field.
+与 `spec/status-codes.md` 对应的常量包。发出 `ErrorFrame` 或
+与 `status` 字段比较时使用。
 
 ---
 
 ## `CryptoProvider`
 
-Structural scaffold for pluggable async crypto (Node `node:crypto` vs
-browser `SubtleCrypto`). Not instantiated by the public API today; NIP
-currently uses `@noble/ed25519` directly. Exported for downstream
-implementers.
+可插拔异步加密的结构性脚手架（Node `node:crypto` 对比浏览器
+`SubtleCrypto`）。今日公共 API 不会实例化它；NIP 目前直接使用
+`@noble/ed25519`。导出供下游实现者使用。
 
 ```typescript
 interface CryptoProvider {

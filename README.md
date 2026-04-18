@@ -1,3 +1,5 @@
+English | [中文版](./README.cn.md)
+
 # NPS TypeScript SDK — `@labacacia/nps-sdk`
 
 [![npm](https://img.shields.io/npm/v/@labacacia/nps-sdk)](https://www.npmjs.com/package/@labacacia/nps-sdk)
