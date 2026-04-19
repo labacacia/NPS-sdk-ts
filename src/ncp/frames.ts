@@ -197,3 +197,55 @@ export class ErrorFrame implements NpsFrame {
     );
   }
 }
+
+// ── HelloFrame ────────────────────────────────────────────────────────────────
+// NPS-1 §4.6 — Native-mode handshake (0x06). Always Tier-1 JSON: encoding
+// is not yet negotiated when this frame is sent.
+
+export class HelloFrame implements NpsFrame {
+  readonly frameType     = FrameType.HELLO;
+  readonly preferredTier = EncodingTier.JSON;
+
+  static readonly DEFAULT_MAX_FRAME_PAYLOAD      = 0xFFFF;
+  static readonly DEFAULT_MAX_CONCURRENT_STREAMS = 32;
+
+  constructor(
+    public readonly npsVersion:           string,
+    public readonly supportedEncodings:   readonly string[],
+    public readonly supportedProtocols:   readonly string[],
+    public          minVersion?:          string,
+    public          agentId?:             string,
+    public          maxFramePayload:      number = HelloFrame.DEFAULT_MAX_FRAME_PAYLOAD,
+    public          extSupport:           boolean = false,
+    public          maxConcurrentStreams: number = HelloFrame.DEFAULT_MAX_CONCURRENT_STREAMS,
+    public          e2eEncAlgorithms?:    readonly string[],
+  ) {}
+
+  toDict(): Record<string, unknown> {
+    return {
+      nps_version:            this.npsVersion,
+      supported_encodings:    [...this.supportedEncodings],
+      supported_protocols:    [...this.supportedProtocols],
+      min_version:            this.minVersion ?? null,
+      agent_id:               this.agentId    ?? null,
+      max_frame_payload:      this.maxFramePayload,
+      ext_support:            this.extSupport,
+      max_concurrent_streams: this.maxConcurrentStreams,
+      e2e_enc_algorithms:     this.e2eEncAlgorithms ? [...this.e2eEncAlgorithms] : null,
+    };
+  }
+
+  static fromDict(data: Record<string, unknown>): HelloFrame {
+    return new HelloFrame(
+      data["nps_version"]         as string,
+      (data["supported_encodings"] as string[]) ?? [],
+      (data["supported_protocols"] as string[]) ?? [],
+      (data["min_version"]        as string | null) ?? undefined,
+      (data["agent_id"]           as string | null) ?? undefined,
+      (data["max_frame_payload"]  as number | null) ?? HelloFrame.DEFAULT_MAX_FRAME_PAYLOAD,
+      (data["ext_support"]        as boolean | null) ?? false,
+      (data["max_concurrent_streams"] as number | null) ?? HelloFrame.DEFAULT_MAX_CONCURRENT_STREAMS,
+      (data["e2e_enc_algorithms"] as string[] | null) ?? undefined,
+    );
+  }
+}

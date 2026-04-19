@@ -1,7 +1,7 @@
 {
   "name": "@labacacia/nps-sdk",
-  "version": "1.0.0-alpha.1",
-  "description": "TypeScript SDK for the Neural Protocol Suite (NPS)",
+  "version": "1.0.0-alpha.2",
+  "description": "TypeScript SDK for the Neural Protocol Suite (NPS) — NCP, NWP, NIP, NDP, NOP",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,6 +17,22 @@
     "./ncp": {
       "import": "./dist/ncp/index.js",
       "types": "./dist/ncp/index.d.ts"
+    },
+    "./nwp": {
+      "import": "./dist/nwp/index.js",
+      "types": "./dist/nwp/index.d.ts"
+    },
+    "./nip": {
+      "import": "./dist/nip/index.js",
+      "types": "./dist/nip/index.d.ts"
+    },
+    "./ndp": {
+      "import": "./dist/ndp/index.js",
+      "types": "./dist/ndp/index.d.ts"
+    },
+    "./nop": {
+      "import": "./dist/nop/index.js",
+      "types": "./dist/nop/index.d.ts"
     }
   },
   "scripts": {
@@ -27,8 +43,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/labacacia/nps.git",
-    "directory": "impl/typescript"
+    "url": "https://github.com/labacacia/NPS-sdk-ts.git"
   },
   "license": "Apache-2.0",
   "engines": {
@@ -36,6 +51,8 @@
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.0.0",
+    "@noble/ed25519": "^2.1.0",
+    "@noble/hashes": "^1.4.0",
     "canonicalize": "^2.0.0",
     "fast-json-patch": "^3.1.1"
   },
