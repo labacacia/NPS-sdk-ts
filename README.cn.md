@@ -1,38 +1,17 @@
 [English Version](./README.md) | 中文版
 
-# NPS TypeScript SDK — `@labacacia/nps-sdk`
+# @labacacia/nps-sdk — TypeScript / Node.js
 
-[![npm](https://img.shields.io/npm/v/@labacacia/nps-sdk)](https://www.npmjs.com/package/@labacacia/nps-sdk)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](./LICENSE)
-[![Node](https://img.shields.io/badge/Node-18%2B-43853D)](https://nodejs.org/)
-
-**Neural Protocol Suite (NPS)** 的 TypeScript SDK —— 专为 AI Agent 与神经模型设计的完整互联网协议栈。
-
-双格式输出（ESM + CJS）· 支持 Node.js 与现代浏览器。
-
----
-
-## NPS 仓库导航
-
-| 仓库 | 职责 | 语言 |
-|------|------|------|
-| [NPS-Release](https://github.com/labacacia/NPS-Release) | 协议规范（权威来源） | Markdown / YAML |
-| [NPS-sdk-dotnet](https://github.com/labacacia/NPS-sdk-dotnet) | 参考实现 | C# / .NET 10 |
-| [NPS-sdk-py](https://github.com/labacacia/NPS-sdk-py) | 异步 Python SDK | Python 3.11+ |
-| **[NPS-sdk-ts](https://github.com/labacacia/NPS-sdk-ts)**（本仓库） | Node/浏览器 SDK | TypeScript |
-| [NPS-sdk-java](https://github.com/labacacia/NPS-sdk-java) | JVM SDK | Java 21+ |
-| [NPS-sdk-rust](https://github.com/labacacia/NPS-sdk-rust) | 异步 SDK | Rust stable |
-| [NPS-sdk-go](https://github.com/labacacia/NPS-sdk-go) | Go SDK | Go 1.23+ |
-
----
+面向 **Neural Protocol Suite (NPS)** 的 TypeScript SDK —— 为 AI Agent 设计的协议族。
+属 [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD 开源生态。
 
 ## 状态
 
-**v1.0.0-alpha.1 — Phase 2 发布** · 5 个协议 · 139 个测试 · **≥ 98% 覆盖率**
+**v1.0.0-alpha.2 — Phase 2** · 5 个协议 · 264 个测试 · 覆盖率 ≥ 98%
 
-| 协议 | 导出 API | 状态 |
-|------|----------|------|
-| NCP — Neural Communication Protocol | `NpsFrameCodec`、帧类型 | ✅ |
+| 协议 | 类 | 状态 |
+|------|----|------|
+| NCP — Neural Communication Protocol | 帧、编解码器 | ✅ |
 | NWP — Neural Web Protocol | `NwpClient` | ✅ |
 | NIP — Neural Identity Protocol | `NipIdentity` | ✅ |
 | NDP — Neural Discovery Protocol | `InMemoryNdpRegistry`、`NdpAnnounceValidator` | ✅ |
@@ -44,7 +23,7 @@
 npm install @labacacia/nps-sdk
 ```
 
-> **运行环境要求：** Node.js 18+（Web Crypto API）。现代浏览器需原生支持 SubtleCrypto。
+> **对等依赖：** Node.js 22+
 
 ## 快速开始
 
@@ -79,18 +58,21 @@ const result = await client.invoke(new ActionFrame("summarise", { maxTokens: 500
 ```typescript
 import { NipIdentity } from "@labacacia/nps-sdk/nip";
 
+// 生成并持久化
 const id = NipIdentity.generate();
-id.save("./my-key.json", process.env.KEY_PASS!);    // AES-256-GCM + PBKDF2
+id.save("./my-key.json", process.env.KEY_PASS!);
 
+// 加载并签名
 const loaded = NipIdentity.load("./my-key.json", process.env.KEY_PASS!);
 const sig    = loaded.sign({ action: "announce", nid: "urn:nps:node:example.com:data" });
 const ok     = loaded.verify({ action: "announce", nid: "urn:nps:node:example.com:data" }, sig);
 ```
 
-### NDP —— 注册表与验证器
+### NDP —— 注册表和签名校验
 
 ```typescript
-import { InMemoryNdpRegistry, NdpAnnounceValidator, AnnounceFrame } from "@labacacia/nps-sdk/ndp";
+import { InMemoryNdpRegistry, NdpAnnounceValidator } from "@labacacia/nps-sdk/ndp";
+import { AnnounceFrame } from "@labacacia/nps-sdk/ndp";
 
 const registry  = new InMemoryNdpRegistry();
 const validator = new NdpAnnounceValidator();
@@ -100,47 +82,37 @@ registry.announce(frame);
 const resolved = registry.resolve("nwp://example.com/data/items");
 ```
 
-### NOP —— 提交与等待
+### NOP —— 提交并等待任务
 
 ```typescript
 import { NopClient, TaskFrame } from "@labacacia/nps-sdk/nop";
 
 const client = new NopClient("http://orchestrator.example.com:17433");
-const taskId = await client.submit(new TaskFrame("task-1", {
+const dag    = {
   nodes: [{ id: "classify", action: "classify-text", agent: "urn:nps:node:ml.example.com:classifier" }],
   edges: [],
-}));
+};
+
+const taskId = await client.submit(new TaskFrame("my-task-1", dag));
 const status = await client.wait(taskId, { timeoutMs: 30_000 });
 console.log(status.state, status.aggregatedResult);
 ```
 
-## API 参考
-
-完整的类与方法参考见 [`doc/`](./doc/)：
-
-| 子路径 | 说明 | 参考文档 |
-|--------|------|----------|
-| —                                   | 总览、安装、最小示例                          | [`doc/overview.cn.md`](./doc/overview.cn.md) |
-| `@labacacia/nps-sdk/core`           | 帧头、编解码、AnchorFrame 缓存、异常 | [`doc/nps-sdk.core.cn.md`](./doc/nps-sdk.core.cn.md) |
-| `@labacacia/nps-sdk/ncp`            | NCP 帧 + 握手 + 流管理 | [`doc/nps-sdk.ncp.cn.md`](./doc/nps-sdk.ncp.cn.md) |
-| `@labacacia/nps-sdk/nwp`            | `QueryFrame`、`ActionFrame`、`NwpClient` | [`doc/nps-sdk.nwp.cn.md`](./doc/nps-sdk.nwp.cn.md) |
-| `@labacacia/nps-sdk/nip`            | `IdentFrame`、`TrustFrame`、`RevokeFrame`、`NipIdentity` | [`doc/nps-sdk.nip.cn.md`](./doc/nps-sdk.nip.cn.md) |
-| `@labacacia/nps-sdk/ndp`            | NDP 帧 + `InMemoryNdpRegistry` + 验证器 | [`doc/nps-sdk.ndp.cn.md`](./doc/nps-sdk.ndp.cn.md) |
-| `@labacacia/nps-sdk/nop`            | DAG 模型、NOP 帧、`NopClient` | [`doc/nps-sdk.nop.cn.md`](./doc/nps-sdk.nop.cn.md) |
-
 ## 包导出
 
 ```typescript
-import { ... } from "@labacacia/nps-sdk";         // 根 —— 全部
-import { ... } from "@labacacia/nps-sdk/core";    // 编解码、帧、注册表、缓存
-import { ... } from "@labacacia/nps-sdk/ncp";     // AnchorFrame、CapsFrame、StreamFrame 等
-import { ... } from "@labacacia/nps-sdk/nwp";     // NwpClient、QueryFrame、ActionFrame
-import { ... } from "@labacacia/nps-sdk/nip";     // NipIdentity、IdentFrame、TrustFrame、RevokeFrame
-import { ... } from "@labacacia/nps-sdk/ndp";     // InMemoryNdpRegistry、NdpAnnounceValidator、AnnounceFrame 等
-import { ... } from "@labacacia/nps-sdk/nop";     // NopClient、NopTaskStatus、TaskFrame 等
+import { ... } from "@labacacia/nps-sdk";           // 全部
+import { ... } from "@labacacia/nps-sdk/core";       // codec、帧、registry、cache
+import { ... } from "@labacacia/nps-sdk/ncp";        // AnchorFrame、CapsFrame、StreamFrame、HelloFrame、…
+import { ... } from "@labacacia/nps-sdk/nwp";        // NwpClient、QueryFrame、ActionFrame
+import { ... } from "@labacacia/nps-sdk/nip";        // NipIdentity、IdentFrame、TrustFrame、RevokeFrame
+import { ... } from "@labacacia/nps-sdk/ndp";        // InMemoryNdpRegistry、NdpAnnounceValidator、AnnounceFrame、…
+import { ... } from "@labacacia/nps-sdk/nop";        // NopClient、NopTaskStatus、TaskFrame、…
 ```
 
 ## NCP 编解码
+
+编解码层支持双 Tier 编码和对线上字节的直接操作：
 
 ```typescript
 import { NpsFrameCodec, EncodingTier } from "@labacacia/nps-sdk/core";
@@ -148,30 +120,36 @@ import { createDefaultRegistry } from "@labacacia/nps-sdk";
 
 const codec = new NpsFrameCodec(createDefaultRegistry());
 
-const wire    = codec.encode(frame);                                          // MsgPack（默认）
-const json    = codec.encode(frame, { overrideTier: EncodingTier.JSON });     // JSON Tier
+// 编码（默认 MsgPack）
+const wire = codec.encode(frame);
+
+// 编码为 JSON（调试 / 互操作）
+const json = codec.encode(frame, { overrideTier: EncodingTier.JSON });
+
+// 解码
 const decoded = codec.decode(wire);
 
-// 不解析负载直接查看帧头
+// 仅读取帧头，不解码 payload
 const header = NpsFrameCodec.peekHeader(wire);
 console.log(header.frameType, header.isExtended, header.payloadLength);
 ```
 
-## NIP CA Server
-
-`nip-ca-server/` 目录提供一个独立 NIP 证书颁发机构服务 —— 基于 Fastify，SQLite 存储，开箱即用的 Docker 部署。
-
 ## 开发
 
 ```bash
-npm install --no-bin-links                        # 无需符号链接
-node node_modules/vitest/vitest.mjs run           # 运行 139 个测试
-node node_modules/vitest/vitest.mjs run --coverage
-node node_modules/tsup/dist/cli-default.js        # 构建 ESM + CJS
+# 安装
+npm install
+
+# 测试
+npm test
+
+# 测试 + 覆盖率
+npm run test -- --coverage
+
+# 构建（ESM + CJS）
+npm run build
 ```
 
 ## 许可证
 
-Apache 2.0 —— 详见 [LICENSE](./LICENSE) 与 [NOTICE](./NOTICE)。
-
-Copyright 2026 INNO LOTUS PTY LTD
+Apache 2.0 —— 详见 [LICENSE](../../LICENSE)。
