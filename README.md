@@ -7,7 +7,7 @@ Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-
 
 ## Status
 
-**v1.0.0-alpha.2 — Phase 2** · 5 protocols · 264 tests · ≥ 98% coverage
+**v1.0.0-alpha.3 — Phase 2** · 5 protocols · 264 tests · ≥ 98% coverage
 
 | Protocol | Class | Status |
 |----------|-------|--------|
