@@ -12,6 +12,8 @@ export const NCP_ERROR_CODES = {
   // Implementation-only codes (not in spec §6 — see test_results.md spec question 2)
   NCP_FRAME_PARSE_ERROR: "NCP-FRAME-PARSE-ERROR",
   NCP_FRAME_INCOMPLETE: "NCP-FRAME-INCOMPLETE",
+  // NPS-RFC-0001 — native-mode preamble
+  NCP_PREAMBLE_INVALID: "NCP-PREAMBLE-INVALID",
   // Spec-defined codes
   NCP_FRAME_UNKNOWN_TYPE: "NCP-FRAME-UNKNOWN-TYPE",
   NCP_FRAME_PAYLOAD_TOO_LARGE: "NCP-FRAME-PAYLOAD-TOO-LARGE",

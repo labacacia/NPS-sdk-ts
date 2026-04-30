@@ -1,0 +1,28 @@
+// Copyright 2026 INNO LOTUS PTY LTD
+// SPDX-License-Identifier: Apache-2.0
+
+/**
+ * OID constants for NPS X.509 certificates per NPS-RFC-0002 §4.
+ *
+ * The 1.3.6.1.4.1.99999 arc is provisional pending IANA Private Enterprise
+ * Number assignment (RFC-0002 §10 OQ-2). All implementations MUST update
+ * these constants when the official PEN is granted.
+ */
+
+export const LAB_ACACIA_PEN_ARC = "1.3.6.1.4.1.99999";
+export const EKU_ARC            = `${LAB_ACACIA_PEN_ARC}.1`;
+export const EXTENSION_ARC      = `${LAB_ACACIA_PEN_ARC}.2`;
+
+// ── EKUs (NPS-RFC-0002 §4.1) ─────────────────────────────────────────────────
+export const EKU_AGENT_IDENTITY        = `${EKU_ARC}.1`;
+export const EKU_NODE_IDENTITY         = `${EKU_ARC}.2`;
+export const EKU_CA_INTERMEDIATE_AGENT = `${EKU_ARC}.3`;
+
+// ── Custom extensions ────────────────────────────────────────────────────────
+export const NID_ASSURANCE_LEVEL = `${EXTENSION_ARC}.1`;
+
+// ── Ed25519 algorithm OID per RFC 8410 ───────────────────────────────────────
+export const ED25519 = "1.3.101.112";
+
+// ── Standard X.509 OIDs we reference ─────────────────────────────────────────
+export const OID_EXTENDED_KEY_USAGE = "2.5.29.37";
