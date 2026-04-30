@@ -3,6 +3,7 @@
 
 import { EncodingTier, FrameType } from "../core/frames.js";
 import type { NpsFrame } from "../core/codec.js";
+import { AssuranceLevel } from "./assurance-level.js";
 
 export interface IdentMetadata {
   issuer:       string;
@@ -12,35 +13,66 @@ export interface IdentMetadata {
   scopes?:       readonly string[];
 }
 
+export interface IdentFrameOptions {
+  assuranceLevel?: AssuranceLevel | null;   // RFC-0003
+  certFormat?:     string | null;            // RFC-0002 — null treated as "v1-proprietary"
+  certChain?:      readonly string[] | null; // RFC-0002 — base64url(DER), [leaf, intermediates..., root]
+}
+
 export class IdentFrame implements NpsFrame {
   readonly frameType     = FrameType.IDENT;
   readonly preferredTier = EncodingTier.MSGPACK;
+
+  readonly assuranceLevel: AssuranceLevel | null;
+  readonly certFormat:     string | null;
+  readonly certChain:      readonly string[] | null;
 
   constructor(
     public readonly nid:       string,
     public readonly pubKey:    string,
     public readonly metadata:  IdentMetadata,
     public readonly signature: string,
-  ) {}
+    options:                    IdentFrameOptions = {},
+  ) {
+    this.assuranceLevel = options.assuranceLevel ?? null;
+    this.certFormat     = options.certFormat     ?? null;
+    this.certChain      = options.certChain      ?? null;
+  }
 
   unsignedDict(): Record<string, unknown> {
-    return {
+    const out: Record<string, unknown> = {
       nid:      this.nid,
       pub_key:  this.pubKey,
       metadata: this.metadata,
     };
+    if (this.assuranceLevel !== null) out["assurance_level"] = this.assuranceLevel.wire;
+    // cert_format / cert_chain deliberately excluded from the signed payload —
+    // the v1 Ed25519 signature covers only (nid, pub_key, metadata, [assurance_level]).
+    return out;
   }
 
   toDict(): Record<string, unknown> {
-    return { ...this.unsignedDict(), signature: this.signature };
+    const out: Record<string, unknown> = { ...this.unsignedDict(), signature: this.signature };
+    if (this.certFormat !== null) out["cert_format"] = this.certFormat;
+    if (this.certChain  !== null) out["cert_chain"]  = [...this.certChain];
+    return out;
   }
 
   static fromDict(data: Record<string, unknown>): IdentFrame {
+    const lvl = data["assurance_level"];
+    const assuranceLevel = typeof lvl === "string" ? AssuranceLevel.fromWire(lvl) : null;
+    const chainRaw = data["cert_chain"];
+    const certChain = Array.isArray(chainRaw) ? (chainRaw as string[]) : null;
     return new IdentFrame(
       data["nid"]       as string,
       data["pub_key"]   as string,
       data["metadata"]  as IdentMetadata,
       data["signature"] as string,
+      {
+        assuranceLevel,
+        certFormat: (data["cert_format"] as string | undefined) ?? null,
+        certChain,
+      },
     );
   }
 }

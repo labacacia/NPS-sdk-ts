@@ -10,3 +10,4 @@ export * from "./ncp-error-codes.js";
 export * from "./ncp-patch-format.js";
 export * from "./handshake.js";
 export * from "./stream-manager.js";
+export * from "./preamble.js";
