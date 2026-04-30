@@ -7,15 +7,21 @@
 
 ## 状态
 
-**v1.0.0-alpha.3 — Phase 2** · 5 个协议 · 264 个测试 · 覆盖率 ≥ 98%
+**v1.0.0-alpha.4 — RFC-0002 跨 SDK 端口波（第三棒）** · 5 个协议 · 271 个测试 · 覆盖率 ≥ 98%
 
 | 协议 | 类 | 状态 |
 |------|----|------|
 | NCP — Neural Communication Protocol | 帧、编解码器 | ✅ |
 | NWP — Neural Web Protocol | `NwpClient` | ✅ |
-| NIP — Neural Identity Protocol | `NipIdentity` | ✅ |
+| NIP — Neural Identity Protocol | `NipIdentity`、`NipIdentVerifier`（RFC-0002 §8.1 双信任）、`AssuranceLevel`（RFC-0003）、`nip.x509` + `nip.acme` | ✅ |
 | NDP — Neural Discovery Protocol | `InMemoryNdpRegistry`、`NdpAnnounceValidator` | ✅ |
 | NOP — Neural Orchestration Protocol | `NopClient` | ✅ |
+
+**alpha.4 新增** —— 完整的 NPS-RFC-0002 X.509 + ACME `agent-01` NID 证书原语：
+
+- `nip.x509` —— `issueLeaf` / `issueRoot` / `verify`（基于 `@peculiar/x509` + 原生 Web Crypto Ed25519）。
+- `nip.acme` —— `AcmeClient` + 进程内 `AcmeServer` + JWS / messages helpers（RFC 8555 + RFC 8037 EdDSA）。
+- `IdentFrame` 扩展非破坏性可选构造参数 `assuranceLevel` / `certFormat` / `certChain`；v1 verifier 忽略新字段。
 
 ## 安装
 

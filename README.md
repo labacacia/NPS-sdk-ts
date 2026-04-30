@@ -7,15 +7,21 @@ Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-
 
 ## Status
 
-**v1.0.0-alpha.3 — Phase 2** · 5 protocols · 264 tests · ≥ 98% coverage
+**v1.0.0-alpha.4 — RFC-0002 cross-SDK port (third language)** · 5 protocols · 271 tests · ≥ 98% coverage
 
 | Protocol | Class | Status |
 |----------|-------|--------|
 | NCP — Neural Communication Protocol | Framing, codec | ✅ |
 | NWP — Neural Web Protocol | `NwpClient` | ✅ |
-| NIP — Neural Identity Protocol | `NipIdentity` | ✅ |
+| NIP — Neural Identity Protocol | `NipIdentity`, `NipIdentVerifier` (RFC-0002 §8.1 dual-trust), `AssuranceLevel` (RFC-0003), `nip.x509` + `nip.acme` | ✅ |
 | NDP — Neural Discovery Protocol | `InMemoryNdpRegistry`, `NdpAnnounceValidator` | ✅ |
 | NOP — Neural Orchestration Protocol | `NopClient` | ✅ |
+
+**alpha.4 additions** — Full NPS-RFC-0002 X.509 + ACME `agent-01` NID certificate primitives:
+
+- `nip.x509` — `issueLeaf` / `issueRoot` / `verify` (built on `@peculiar/x509` + native Web Crypto Ed25519).
+- `nip.acme` — `AcmeClient` + in-process `AcmeServer` + JWS / message helpers (RFC 8555 + EdDSA per RFC 8037).
+- `IdentFrame` extended with non-breaking `assuranceLevel` / `certFormat` / `certChain` constructor options; v1 verifiers ignore the new fields.
 
 ## Installation
 

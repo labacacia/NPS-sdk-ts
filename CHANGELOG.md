@@ -8,6 +8,67 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
 
 ---
 
+## [1.0.0-alpha.4] — 2026-04-30
+
+### Added
+
+- **NPS-RFC-0001 Phase 2 — NCP connection preamble (TypeScript helper
+  parity).** `src/ncp/preamble.ts` exposes `writePreamble(stream)` and
+  `readPreamble(stream)` round-tripping the literal `b"NPS/1.0\n"`
+  sentinel; matched by `tests/ncp/preamble.test.ts`. Brings TypeScript
+  in line with the .NET / Python / Go / Java preamble helpers shipped
+  at alpha.4.
+- **NPS-RFC-0002 Phase A/B — X.509 NID certificates + ACME `agent-01`
+  (TypeScript port).** New surface under `src/nip/`:
+  - `nip/x509/` — X.509 NID certificate builder + verifier
+    (`x509.Builder`, `x509.Verifier`).
+  - `nip/acme/` — ACME `agent-01` client + server reference
+    (`AcmeServer`, `AcmeClient`); JWS-signed wire envelope per
+    NPS-RFC-0002 Phase B.
+  - `nip/assurance-level.ts` — agent identity assurance levels
+    (`anonymous` / `attested` / `verified`) per NPS-RFC-0003.
+  - `nip/cert-format.ts` — IdentFrame `cert_format` discriminator
+    (`v1` Ed25519 vs. `x509`).
+  - `nip/error-codes.ts` — NIP error code namespace strings.
+  - `nip/verifier.ts` — dual-trust IdentFrame verifier (v1 + X.509).
+- 20 new tests covering preamble round-trip, X.509 issuance + parsing,
+  dual-trust verification, and ACME agent-01 round-trip. Total: 284
+  tests green (was 264 at alpha.3).
+
+### Changed
+
+- Distribution version bumped to `1.0.0-alpha.4`.
+- `src/nip/frames.ts` — IdentFrame wire shape extended with optional
+  `cert_format` discriminator + `x509_chain` field alongside the
+  existing v1 Ed25519 fields. v1 IdentFrames written by alpha.3
+  consumers continue to verify unchanged.
+
+### Note: npm publish status
+
+- This repo / tag is the canonical `1.0.0-alpha.4` reference for
+  `@labacacia/nps-sdk`. As at the alpha.3 ship cycle, npm publish
+  may require a granular access token with 2FA-bypass enabled — if
+  the registry version lags this repo's tag, the tag is the
+  authoritative artifact and `npm install` against the next
+  registry cut will resolve to this commit.
+
+### Suite-wide highlights at alpha.4
+
+- **NPS-RFC-0002 X.509 + ACME** — full cross-SDK port wave (.NET /
+  Java / Python / TypeScript / Go / Rust). Servers can now issue
+  dual-trust IdentFrames (v1 Ed25519 + X.509 leaf cert chained to a
+  self-signed root) and self-onboard NIDs over ACME's `agent-01`
+  challenge type.
+- **NPS-CR-0002 — Anchor Node topology queries** — `topology.snapshot`
+  / `topology.stream` query types (.NET reference + L2 conformance
+  suite). TypeScript consumer-side helpers planned for a later
+  release.
+- **`nps-registry` SQLite-backed real registry** + **`nps-ledger`
+  Phase 2** (RFC 9162 Merkle + STH + inclusion proofs) shipped in the
+  daemon repos.
+
+---
+
 ## [1.0.0-alpha.3] — 2026-04-25
 
 ### Changed
@@ -52,6 +113,7 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
 
 First public alpha as part of the NPS suite `v1.0.0-alpha.1` release.
 
+[1.0.0-alpha.4]: https://github.com/labacacia/NPS-sdk-ts/releases/tag/v1.0.0-alpha.4
 [1.0.0-alpha.3]: https://github.com/LabAcacia/NPS-Dev/releases/tag/v1.0.0-alpha.3
 [1.0.0-alpha.2]: https://github.com/LabAcacia/NPS-Dev/releases/tag/v1.0.0-alpha.2
 [1.0.0-alpha.1]: https://github.com/LabAcacia/NPS-Dev/releases/tag/v1.0.0-alpha.1
