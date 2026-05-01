@@ -44,7 +44,7 @@ export class NwpClient {
     const wire = this._codec.encode(frame, { overrideTier: this._tier });
     const res  = await fetch(`${this._baseUrl}/anchor`, {
       method:  "POST",
-      body:    wire,
+      body:    wire as BodyInit,
       headers: { "Content-Type": CONTENT_TYPE, "Accept": CONTENT_TYPE },
     });
     if (!res.ok) throw new Error(`NWP /anchor failed: HTTP ${res.status}`);
@@ -54,7 +54,7 @@ export class NwpClient {
     const wire = this._codec.encode(frame, { overrideTier: this._tier });
     const res  = await fetch(`${this._baseUrl}/query`, {
       method:  "POST",
-      body:    wire,
+      body:    wire as BodyInit,
       headers: { "Content-Type": CONTENT_TYPE, "Accept": CONTENT_TYPE },
     });
     if (!res.ok) throw new Error(`NWP /query failed: HTTP ${res.status}`);
@@ -71,7 +71,7 @@ export class NwpClient {
     const wire = this._codec.encode(frame, { overrideTier: this._tier });
     const res  = await fetch(`${this._baseUrl}/stream`, {
       method:  "POST",
-      body:    wire,
+      body:    wire as BodyInit,
       headers: { "Content-Type": CONTENT_TYPE, "Accept": CONTENT_TYPE },
     });
     if (!res.ok) throw new Error(`NWP /stream failed: HTTP ${res.status}`);
@@ -95,7 +95,7 @@ export class NwpClient {
     const wire = this._codec.encode(frame, { overrideTier: this._tier });
     const res  = await fetch(`${this._baseUrl}/invoke`, {
       method:  "POST",
-      body:    wire,
+      body:    wire as BodyInit,
       headers: { "Content-Type": CONTENT_TYPE, "Accept": CONTENT_TYPE },
     });
     if (!res.ok) throw new Error(`NWP /invoke failed: HTTP ${res.status}`);

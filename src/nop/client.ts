@@ -57,7 +57,7 @@ export class NopClient {
     const wire = this._codec.encode(frame, { overrideTier: this._tier });
     const res  = await fetch(`${this._baseUrl}/task`, {
       method:  "POST",
-      body:    wire,
+      body:    wire as BodyInit,
       headers: { "Content-Type": "application/x-nps-frame", "Accept": "application/json" },
     });
     if (!res.ok) throw new Error(`NOP /task failed: HTTP ${res.status}`);
