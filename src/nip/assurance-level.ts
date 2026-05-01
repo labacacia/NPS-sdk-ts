@@ -18,8 +18,13 @@ export class AssuranceLevel {
     return this.rank >= required.rank;
   }
 
+  /**
+   * Parse a wire string.  `null`, `undefined`, or `""` → `ANONYMOUS`
+   * (backward compat per NPS-RFC-0003 §5.1.1).  Any other unrecognised
+   * non-empty value throws — callers MUST surface it as `NIP-ASSURANCE-UNKNOWN`.
+   */
   static fromWire(wire: string | null | undefined): AssuranceLevel {
-    if (wire == null) return AssuranceLevel.ANONYMOUS;
+    if (!wire) return AssuranceLevel.ANONYMOUS; // null, undefined, or ""
     for (const level of [AssuranceLevel.ANONYMOUS, AssuranceLevel.ATTESTED, AssuranceLevel.VERIFIED]) {
       if (level.wire === wire) return level;
     }

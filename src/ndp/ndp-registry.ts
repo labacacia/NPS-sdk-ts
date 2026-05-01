@@ -2,6 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { AnnounceFrame, NdpResolveResult } from "./frames.js";
+import {
+  extractHostFromTarget,
+  parseNpsTxtRecord,
+  SystemDnsTxtLookup,
+  type DnsTxtLookup,
+} from "./dns-txt.js";
 
 interface RegistryEntry {
   frame:     AnnounceFrame;
@@ -52,6 +58,34 @@ export class InMemoryNdpRegistry {
       result.push(entry.frame);
     }
     return result;
+  }
+
+  async resolveWithDns(
+    target: string,
+    resolver: DnsTxtLookup = new SystemDnsTxtLookup(),
+  ): Promise<NdpResolveResult | undefined> {
+    // 1. Try in-memory registry first
+    const cached = this.resolve(target);
+    if (cached !== undefined) return cached;
+
+    // 2. Extract hostname and fall back to DNS TXT lookup
+    const host = extractHostFromTarget(target);
+    if (host === undefined) return undefined;
+
+    const txtHost = `_nps-node.${host}`;
+    let records: string[][];
+    try {
+      records = await resolver.resolveTxt(txtHost);
+    } catch {
+      return undefined;
+    }
+
+    for (const record of records) {
+      const result = parseNpsTxtRecord(record, host);
+      if (result !== undefined) return result;
+    }
+
+    return undefined;
   }
 
   static nwpTargetMatchesNid(nid: string, target: string): boolean {
