@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { AnnounceFrame, ResolveFrame, GraphFrame } from "../src/ndp/frames.js";
 import { InMemoryNdpRegistry } from "../src/ndp/ndp-registry.js";
 import { NdpAnnounceValidator, NdpAnnounceResult } from "../src/ndp/validator.js";
+import { parseNpsTxtRecord, extractHostFromTarget, type DnsTxtLookup } from "../src/ndp/dns-txt.js";
 import { NipIdentity } from "../src/nip/identity.js";
 import { createFullRegistry } from "../src/setup.js";
 import { NpsFrameCodec } from "../src/core/index.js";
@@ -267,5 +268,110 @@ describe("NdpAnnounceValidator", () => {
     const v = new NdpAnnounceValidator();
     v.registerPublicKey("urn:nps:node:a:1", "ed25519:aabb");
     expect(v.knownPublicKeys.size).toBe(1);
+  });
+});
+
+// ── DnsTxtResolution ──────────────────────────────────────────────────────────
+
+describe("DnsTxtResolution", () => {
+  // ── parseNpsTxtRecord ───────────────────────────────────────────────────────
+
+  it("parseNpsTxtRecord - valid full record", () => {
+    const parts = ["v=nps1 type=memory port=17434 nid=urn:nps:node:api.example.com:products fp=sha256:a3f9"];
+    const result = parseNpsTxtRecord(parts, "api.example.com");
+    expect(result).toBeDefined();
+    expect(result?.host).toBe("api.example.com");
+    expect(result?.port).toBe(17434);
+    expect(result?.ttl).toBe(300);
+    expect(result?.certFingerprint).toBe("sha256:a3f9");
+  });
+
+  it("parseNpsTxtRecord - missing v returns undefined", () => {
+    const parts = ["type=memory port=17434 nid=urn:nps:node:api.example.com:products"];
+    expect(parseNpsTxtRecord(parts, "api.example.com")).toBeUndefined();
+  });
+
+  it("parseNpsTxtRecord - wrong v returns undefined", () => {
+    const parts = ["v=nps2 nid=urn:nps:node:api.example.com:products"];
+    expect(parseNpsTxtRecord(parts, "api.example.com")).toBeUndefined();
+  });
+
+  it("parseNpsTxtRecord - missing nid returns undefined", () => {
+    const parts = ["v=nps1 type=memory port=17434"];
+    expect(parseNpsTxtRecord(parts, "api.example.com")).toBeUndefined();
+  });
+
+  it("parseNpsTxtRecord - default port", () => {
+    const parts = ["v=nps1 nid=urn:nps:node:api.example.com:products"];
+    const result = parseNpsTxtRecord(parts, "api.example.com");
+    expect(result).toBeDefined();
+    expect(result?.port).toBe(17433);
+  });
+
+  it("parseNpsTxtRecord - with fingerprint", () => {
+    const parts = ["v=nps1 nid=urn:nps:node:api.example.com:products fp=sha256:deadbeef"];
+    const result = parseNpsTxtRecord(parts, "api.example.com");
+    expect(result?.certFingerprint).toBe("sha256:deadbeef");
+  });
+
+  // ── resolveWithDns ──────────────────────────────────────────────────────────
+
+  it("resolveWithDns - uses registry first (dns not called)", async () => {
+    const reg = new InMemoryNdpRegistry();
+    reg.announce(makeAnnounce("urn:nps:node:example.com:data", 300));
+
+    let dnsCalled = false;
+    const mockDns: DnsTxtLookup = {
+      resolveTxt: async (_hostname: string) => {
+        dnsCalled = true;
+        return [];
+      },
+    };
+
+    const result = await reg.resolveWithDns("nwp://example.com/data", mockDns);
+    expect(result).toBeDefined();
+    expect(result?.host).toBe("example.com");
+    expect(dnsCalled).toBe(false);
+  });
+
+  it("resolveWithDns - falls back to dns when registry empty", async () => {
+    const reg = new InMemoryNdpRegistry();
+
+    const mockDns: DnsTxtLookup = {
+      resolveTxt: async (hostname: string) => {
+        expect(hostname).toBe("_nps-node.api.example.com");
+        return [["v=nps1 nid=urn:nps:node:api.example.com:products port=17434"]];
+      },
+    };
+
+    const result = await reg.resolveWithDns("nwp://api.example.com/products", mockDns);
+    expect(result).toBeDefined();
+    expect(result?.host).toBe("api.example.com");
+    expect(result?.port).toBe(17434);
+  });
+
+  it("resolveWithDns - invalid txt returns undefined", async () => {
+    const reg = new InMemoryNdpRegistry();
+
+    const mockDns: DnsTxtLookup = {
+      resolveTxt: async (_hostname: string) => {
+        // Missing v=nps1 and nid — invalid record
+        return [["type=memory port=17434"]];
+      },
+    };
+
+    const result = await reg.resolveWithDns("nwp://api.example.com/products", mockDns);
+    expect(result).toBeUndefined();
+  });
+
+  it("resolveWithDns - empty records returns undefined", async () => {
+    const reg = new InMemoryNdpRegistry();
+
+    const mockDns: DnsTxtLookup = {
+      resolveTxt: async (_hostname: string) => [],
+    };
+
+    const result = await reg.resolveWithDns("nwp://api.example.com/products", mockDns);
+    expect(result).toBeUndefined();
   });
 });

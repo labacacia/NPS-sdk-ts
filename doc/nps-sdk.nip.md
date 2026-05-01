@@ -19,6 +19,7 @@ AES-256-GCM + PBKDF2-SHA256 key-file encryption.
 - [`RevokeFrame` (0x22)](#revokeframe-0x22)
 - [`NipIdentity`](#nipidentity)
 - [Canonical JSON & signing format](#canonical-json--signing-format)
+- [`NipErrorCodes`](#niperrorecodes)
 
 ---
 
@@ -240,3 +241,32 @@ const signed    = new IdentFrame(unsigned.nid, unsigned.pubKey, meta, signature)
 const ok = id.verify(signed.unsignedDict(), signed.signature);
 // → true
 ```
+
+---
+
+## `NipErrorCodes`
+
+String constants for NIP wire error codes. Import from `@labacacia/nps-sdk/nip`.
+
+```typescript
+import { NipErrorCodes } from "@labacacia/nps-sdk/nip";
+```
+
+| Constant | Wire value | Since |
+|----------|------------|-------|
+| `NipErrorCodes.IDENT_SIG_INVALID` | `"NIP-IDENT-SIG-INVALID"` | alpha.4 |
+| `NipErrorCodes.IDENT_NID_MISMATCH` | `"NIP-IDENT-NID-MISMATCH"` | alpha.4 |
+| `NipErrorCodes.IDENT_EXPIRED` | `"NIP-IDENT-EXPIRED"` | alpha.4 |
+| `NipErrorCodes.IDENT_REVOKED` | `"NIP-IDENT-REVOKED"` | alpha.4 |
+| `NipErrorCodes.TRUST_CHAIN_BROKEN` | `"NIP-TRUST-CHAIN-BROKEN"` | alpha.4 |
+| `NipErrorCodes.TRUST_SCOPE_VIOLATION` | `"NIP-TRUST-SCOPE-VIOLATION"` | alpha.4 |
+| `NipErrorCodes.ACME_CHALLENGE_FAILED` | `"NIP-ACME-CHALLENGE-FAILED"` | alpha.4 |
+| `NipErrorCodes.ACME_ORDER_EXPIRED` | `"NIP-ACME-ORDER-EXPIRED"` | alpha.4 |
+| `NipErrorCodes.X509_CERT_INVALID` | `"NIP-X509-CERT-INVALID"` | alpha.4 |
+| `NipErrorCodes.X509_CHAIN_UNTRUSTED` | `"NIP-X509-CHAIN-UNTRUSTED"` | alpha.4 |
+| `NipErrorCodes.REPUTATION_LOG_UNREACHABLE` | `"NIP-REPUTATION-LOG-UNREACHABLE"` | alpha.4 |
+| `NipErrorCodes.REPUTATION_GOSSIP_FORK` | `"NIP-REPUTATION-GOSSIP-FORK"` | **alpha.5** |
+| `NipErrorCodes.REPUTATION_GOSSIP_SIG_INVALID` | `"NIP-REPUTATION-GOSSIP-SIG-INVALID"` | **alpha.5** |
+
+`REPUTATION_GOSSIP_FORK` is returned when an STH consistency check fails across peers.
+`REPUTATION_GOSSIP_SIG_INVALID` is returned when a peer STH signature fails verification during a gossip exchange.
