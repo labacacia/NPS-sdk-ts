@@ -19,6 +19,7 @@ NIP 是 NPS 的 TLS/PKI。本模块暴露三个身份帧
 - [`RevokeFrame` (0x22)](#revokeframe-0x22)
 - [`NipIdentity`](#nipidentity)
 - [规范化 JSON 与签名格式](#规范化-json-与签名格式)
+- [`NipErrorCodes`](#niperrorecodes)
 
 ---
 
@@ -233,3 +234,32 @@ const signed    = new IdentFrame(unsigned.nid, unsigned.pubKey, meta, signature)
 const ok = id.verify(signed.unsignedDict(), signed.signature);
 // → true
 ```
+
+---
+
+## `NipErrorCodes`
+
+NIP wire 错误码字符串常量。从 `@labacacia/nps-sdk/nip` 导入。
+
+```typescript
+import { NipErrorCodes } from "@labacacia/nps-sdk/nip";
+```
+
+| 常量 | Wire 值 | 起始版本 |
+|------|---------|----------|
+| `NipErrorCodes.IDENT_SIG_INVALID` | `"NIP-IDENT-SIG-INVALID"` | alpha.4 |
+| `NipErrorCodes.IDENT_NID_MISMATCH` | `"NIP-IDENT-NID-MISMATCH"` | alpha.4 |
+| `NipErrorCodes.IDENT_EXPIRED` | `"NIP-IDENT-EXPIRED"` | alpha.4 |
+| `NipErrorCodes.IDENT_REVOKED` | `"NIP-IDENT-REVOKED"` | alpha.4 |
+| `NipErrorCodes.TRUST_CHAIN_BROKEN` | `"NIP-TRUST-CHAIN-BROKEN"` | alpha.4 |
+| `NipErrorCodes.TRUST_SCOPE_VIOLATION` | `"NIP-TRUST-SCOPE-VIOLATION"` | alpha.4 |
+| `NipErrorCodes.ACME_CHALLENGE_FAILED` | `"NIP-ACME-CHALLENGE-FAILED"` | alpha.4 |
+| `NipErrorCodes.ACME_ORDER_EXPIRED` | `"NIP-ACME-ORDER-EXPIRED"` | alpha.4 |
+| `NipErrorCodes.X509_CERT_INVALID` | `"NIP-X509-CERT-INVALID"` | alpha.4 |
+| `NipErrorCodes.X509_CHAIN_UNTRUSTED` | `"NIP-X509-CHAIN-UNTRUSTED"` | alpha.4 |
+| `NipErrorCodes.REPUTATION_LOG_UNREACHABLE` | `"NIP-REPUTATION-LOG-UNREACHABLE"` | alpha.4 |
+| `NipErrorCodes.REPUTATION_GOSSIP_FORK` | `"NIP-REPUTATION-GOSSIP-FORK"` | **alpha.5** |
+| `NipErrorCodes.REPUTATION_GOSSIP_SIG_INVALID` | `"NIP-REPUTATION-GOSSIP-SIG-INVALID"` | **alpha.5** |
+
+`REPUTATION_GOSSIP_FORK`：跨节点 STH 一致性检查失败时返回。
+`REPUTATION_GOSSIP_SIG_INVALID`：gossip 交换中对端 STH 签名验证失败时返回。

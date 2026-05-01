@@ -19,6 +19,7 @@ action responses.
 - [`QueryFrame` (0x10)](#queryframe-0x10)
 - [`ActionFrame` (0x11)](#actionframe-0x11)
 - [`NwpClient`](#nwpclient)
+- [`NwpErrorCodes`](#nwperrorcodes)
 
 ---
 
@@ -222,3 +223,73 @@ const resp = await nwp.invoke(new ActionFrame(
 ));
 // resp is AsyncActionResponse
 ```
+
+---
+
+## `NwpErrorCodes`
+
+String constants for the 30 NWP wire error codes (added in alpha.5).
+
+```typescript
+import { NwpErrorCodes } from "@labacacia/nps-sdk/nwp";
+```
+
+### Auth group (`NWP-AUTH-*`)
+
+| Constant | Wire value |
+|----------|------------|
+| `NwpErrorCodes.AUTH_NID_SCOPE_VIOLATION` | `"NWP-AUTH-NID-SCOPE-VIOLATION"` |
+| `NwpErrorCodes.AUTH_NID_NOT_TRUSTED` | `"NWP-AUTH-NID-NOT-TRUSTED"` |
+| `NwpErrorCodes.AUTH_NID_EXPIRED` | `"NWP-AUTH-NID-EXPIRED"` |
+| `NwpErrorCodes.AUTH_NID_REVOKED` | `"NWP-AUTH-NID-REVOKED"` |
+| `NwpErrorCodes.AUTH_SIG_INVALID` | `"NWP-AUTH-SIG-INVALID"` |
+| `NwpErrorCodes.AUTH_TOKEN_BUDGET_EXCEEDED` | `"NWP-AUTH-TOKEN-BUDGET-EXCEEDED"` |
+| `NwpErrorCodes.AUTH_RATE_LIMIT` | `"NWP-AUTH-RATE-LIMIT"` |
+
+### Query group (`NWP-QUERY-*`)
+
+| Constant | Wire value |
+|----------|------------|
+| `NwpErrorCodes.QUERY_ANCHOR_NOT_FOUND` | `"NWP-QUERY-ANCHOR-NOT-FOUND"` |
+| `NwpErrorCodes.QUERY_ANCHOR_EXPIRED` | `"NWP-QUERY-ANCHOR-EXPIRED"` |
+| `NwpErrorCodes.QUERY_SCHEMA_MISMATCH` | `"NWP-QUERY-SCHEMA-MISMATCH"` |
+| `NwpErrorCodes.QUERY_LIMIT_EXCEEDED` | `"NWP-QUERY-LIMIT-EXCEEDED"` |
+| `NwpErrorCodes.QUERY_DEPTH_EXCEEDED` | `"NWP-QUERY-DEPTH-EXCEEDED"` |
+| `NwpErrorCodes.QUERY_FILTER_INVALID` | `"NWP-QUERY-FILTER-INVALID"` |
+| `NwpErrorCodes.QUERY_VECTOR_UNSUPPORTED` | `"NWP-QUERY-VECTOR-UNSUPPORTED"` |
+| `NwpErrorCodes.QUERY_CURSOR_INVALID` | `"NWP-QUERY-CURSOR-INVALID"` |
+
+### Action, Task, Subscribe, Infrastructure groups
+
+| Constant | Wire value |
+|----------|------------|
+| `NwpErrorCodes.ACTION_NOT_FOUND` | `"NWP-ACTION-NOT-FOUND"` |
+| `NwpErrorCodes.ACTION_PARAM_INVALID` | `"NWP-ACTION-PARAM-INVALID"` |
+| `NwpErrorCodes.ACTION_IDEMPOTENCY_CONFLICT` | `"NWP-ACTION-IDEMPOTENCY-CONFLICT"` |
+| `NwpErrorCodes.TASK_NOT_FOUND` | `"NWP-TASK-NOT-FOUND"` |
+| `NwpErrorCodes.TASK_ALREADY_COMPLETE` | `"NWP-TASK-ALREADY-COMPLETE"` |
+| `NwpErrorCodes.TASK_TIMEOUT` | `"NWP-TASK-TIMEOUT"` |
+| `NwpErrorCodes.TASK_CANCELLED` | `"NWP-TASK-CANCELLED"` |
+| `NwpErrorCodes.SUBSCRIBE_TOPIC_NOT_FOUND` | `"NWP-SUBSCRIBE-TOPIC-NOT-FOUND"` |
+| `NwpErrorCodes.SUBSCRIBE_ALREADY_ACTIVE` | `"NWP-SUBSCRIBE-ALREADY-ACTIVE"` |
+| `NwpErrorCodes.SUBSCRIBE_QUOTA_EXCEEDED` | `"NWP-SUBSCRIBE-QUOTA-EXCEEDED"` |
+| `NwpErrorCodes.SUBSCRIBE_FILTER_INVALID` | `"NWP-SUBSCRIBE-FILTER-INVALID"` |
+| `NwpErrorCodes.SUBSCRIBE_NOT_FOUND` | `"NWP-SUBSCRIBE-NOT-FOUND"` |
+| `NwpErrorCodes.INFRA_NODE_OVERLOADED` | `"NWP-INFRA-NODE-OVERLOADED"` |
+| `NwpErrorCodes.INFRA_UPSTREAM_TIMEOUT` | `"NWP-INFRA-UPSTREAM-TIMEOUT"` |
+| `NwpErrorCodes.INFRA_UPSTREAM_ERROR` | `"NWP-INFRA-UPSTREAM-ERROR"` |
+| `NwpErrorCodes.INFRA_STORAGE_ERROR` | `"NWP-INFRA-STORAGE-ERROR"` |
+| `NwpErrorCodes.INFRA_CONFIG_ERROR` | `"NWP-INFRA-CONFIG-ERROR"` |
+
+### Manifest, Topology, Reserved groups
+
+| Constant | Wire value |
+|----------|------------|
+| `NwpErrorCodes.MANIFEST_NOT_FOUND` | `"NWP-MANIFEST-NOT-FOUND"` |
+| `NwpErrorCodes.MANIFEST_PARSE_ERROR` | `"NWP-MANIFEST-PARSE-ERROR"` |
+| `NwpErrorCodes.MANIFEST_VERSION_MISMATCH` | `"NWP-MANIFEST-VERSION-MISMATCH"` |
+| `NwpErrorCodes.TOPOLOGY_UNAUTHORIZED` | `"NWP-TOPOLOGY-UNAUTHORIZED"` |
+| `NwpErrorCodes.TOPOLOGY_NOT_AVAILABLE` | `"NWP-TOPOLOGY-NOT-AVAILABLE"` |
+| `NwpErrorCodes.TOPOLOGY_SNAPSHOT_TOO_LARGE` | `"NWP-TOPOLOGY-SNAPSHOT-TOO-LARGE"` |
+| `NwpErrorCodes.TOPOLOGY_STREAM_INTERRUPTED` | `"NWP-TOPOLOGY-STREAM-INTERRUPTED"` |
+| `NwpErrorCodes.RESERVED_TYPE_UNSUPPORTED` | `"NWP-RESERVED-TYPE-UNSUPPORTED"` |
