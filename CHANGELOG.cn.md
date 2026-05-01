@@ -8,6 +8,25 @@
 
 ---
 
+## [1.0.0-alpha.5] —— 2026-05-01
+
+### 新增
+
+- **NWP 错误码常量** —— 新增 `NwpErrorCodes` 命名空间，从 `@labacacia/nps-sdk/nwp` 导出，包含全部 30 个 NWP wire 错误码（auth、query、action、task、subscribe、infrastructure、manifest、topology、reserved-type）。此前版本均未提供。
+- **`NpsStatusCodes.NPS_SERVER_UNSUPPORTED`** —— 在 `src/core/status-codes.ts` 新增状态码 `"NPS-SERVER-UNSUPPORTED"`（HTTP 501），符合 spec/status-codes.md alpha.5 更新。
+- **`NDP.resolveWithDns` —— DNS TXT 回退解析** —— 新增 `InMemoryNdpRegistry.resolveWithDns(target, resolver?)`，当内存注册表无匹配时回退查询 `_nps-node.{host}` TXT 记录（NPS-4 §5）。新增 `DnsTxtLookup` 接口 + `SystemDnsTxtLookup`（Node.js `dns.promises`）；`parseNpsTxtRecord` + `extractHostFromTarget` 从 `@labacacia/nps-sdk/ndp` 导出。测试数：284 → 294。
+
+### 变更
+
+- **`AssuranceLevel.fromWire("")` 返回 `Anonymous`** —— `if (wire == null)` 改为 `if (!wire)`，使 `""` 返回 `Anonymous` 而非 `Unknown`（spec §5.1.1 向后兼容修复）。
+- **版本升至 `1.0.0-alpha.5`** —— 与 NPS 套件 alpha.5 同步。
+
+### 修复
+
+- **`REPUTATION_GOSSIP_FORK` / `REPUTATION_GOSSIP_SIG_INVALID`** —— 向 `src/nip/error-codes.ts` 新增两个 NIP 声誉 gossip 错误码（RFC-0004 Phase 3）。
+
+---
+
 ## [1.0.0-alpha.4] —— 2026-04-30
 
 ### 新增
@@ -104,6 +123,7 @@
 
 作为 NPS 套件 `v1.0.0-alpha.1` 的一部分首次公开 alpha。
 
+[1.0.0-alpha.5]: https://github.com/labacacia/NPS-sdk-ts/releases/tag/v1.0.0-alpha.5
 [1.0.0-alpha.4]: https://gitee.com/labacacia/NPS-sdk-ts/releases/tag/v1.0.0-alpha.4
 [1.0.0-alpha.3]: https://github.com/LabAcacia/NPS-Dev/releases/tag/v1.0.0-alpha.3
 [1.0.0-alpha.2]: https://github.com/LabAcacia/NPS-Dev/releases/tag/v1.0.0-alpha.2
