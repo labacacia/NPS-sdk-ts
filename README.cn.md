@@ -7,24 +7,17 @@
 
 ## 状态
 
-**v1.0.0-alpha.5 —— NWP 错误码 + NPS 状态码扩展** · 5 个协议 · 284 个测试 · 覆盖率 ≥ 98%
+**v1.0.0-alpha.6 — RFC-0002 跨 SDK 端口波（第三棒）** · 5 个协议 · 271 个测试 · 覆盖率 ≥ 98%
 
 | 协议 | 类 | 状态 |
 |------|----|------|
 | NCP — Neural Communication Protocol | 帧、编解码器 | ✅ |
-| NWP — Neural Web Protocol | `NwpClient`、`NwpErrorCodes` | ✅ |
+| NWP — Neural Web Protocol | `NwpClient` | ✅ |
 | NIP — Neural Identity Protocol | `NipIdentity`、`NipIdentVerifier`（RFC-0002 §8.1 双信任）、`AssuranceLevel`（RFC-0003）、`nip.x509` + `nip.acme` | ✅ |
-| NDP — Neural Discovery Protocol | `InMemoryNdpRegistry`、`NdpAnnounceValidator`、`resolveWithDns`（DNS TXT 回退）、`DnsTxtLookup`、`SystemDnsTxtLookup`、`parseNpsTxtRecord` | ✅ |
+| NDP — Neural Discovery Protocol | `InMemoryNdpRegistry`、`NdpAnnounceValidator` | ✅ |
 | NOP — Neural Orchestration Protocol | `NopClient` | ✅ |
 
-**alpha.5 新增：**
-
-- `NwpErrorCodes` —— 从 `@labacacia/nps-sdk/nwp` 导出，包含 30 个 NWP wire 错误码字符串常量（`NWP-AUTH-*`、`NWP-QUERY-*`、`NWP-TOPOLOGY-*`、`NWP-RESERVED-TYPE-UNSUPPORTED` 等）。
-- `NpsStatusCodes.NPS_SERVER_UNSUPPORTED` —— 新状态码 `"NPS-SERVER-UNSUPPORTED"`（HTTP 501）。
-- `NipErrorCodes.REPUTATION_GOSSIP_FORK` / `.REPUTATION_GOSSIP_SIG_INVALID` —— RFC-0004 Phase 3 gossip 错误码。
-- `AssuranceLevel.fromWire("")` 改为返回 `Anonymous`（spec §5.1.1 修复）。
-
-**alpha.4 新增** —— 完整的 NPS-RFC-0002 X.509 + ACME `agent-01` NID 证书原语：
+**早期新增** —— 完整的 NPS-RFC-0002 X.509 + ACME `agent-01` NID 证书原语：
 
 - `nip.x509` —— `issueLeaf` / `issueRoot` / `verify`（基于 `@peculiar/x509` + 原生 Web Crypto Ed25519）。
 - `nip.acme` —— `AcmeClient` + 进程内 `AcmeServer` + JWS / messages helpers（RFC 8555 + RFC 8037 EdDSA）。

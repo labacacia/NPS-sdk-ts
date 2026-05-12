@@ -4,4 +4,3 @@
 export * from "./frames.js";
 export * from "./registry.js";
 export * from "./client.js";
-export * as NwpErrorCodes from "./error-codes.js";
