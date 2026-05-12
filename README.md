@@ -7,24 +7,17 @@ Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-
 
 ## Status
 
-**v1.0.0-alpha.5 — NWP error codes + NPS status code extension** · 5 protocols · 284 tests · ≥ 98% coverage
+**v1.0.0-alpha.6 — RFC-0002 cross-SDK port (third language)** · 5 protocols · 271 tests · ≥ 98% coverage
 
 | Protocol | Class | Status |
 |----------|-------|--------|
 | NCP — Neural Communication Protocol | Framing, codec | ✅ |
-| NWP — Neural Web Protocol | `NwpClient`, `NwpErrorCodes` | ✅ |
+| NWP — Neural Web Protocol | `NwpClient` | ✅ |
 | NIP — Neural Identity Protocol | `NipIdentity`, `NipIdentVerifier` (RFC-0002 §8.1 dual-trust), `AssuranceLevel` (RFC-0003), `nip.x509` + `nip.acme` | ✅ |
-| NDP — Neural Discovery Protocol | `InMemoryNdpRegistry`, `NdpAnnounceValidator`, `resolveWithDns` (DNS TXT fallback), `DnsTxtLookup`, `SystemDnsTxtLookup`, `parseNpsTxtRecord` | ✅ |
+| NDP — Neural Discovery Protocol | `InMemoryNdpRegistry`, `NdpAnnounceValidator` | ✅ |
 | NOP — Neural Orchestration Protocol | `NopClient` | ✅ |
 
-**alpha.5 additions:**
-
-- `NwpErrorCodes` — exported from `@labacacia/nps-sdk/nwp`; 30 NWP wire error code constants (`NWP-AUTH-*`, `NWP-QUERY-*`, `NWP-TOPOLOGY-*`, `NWP-RESERVED-TYPE-UNSUPPORTED`, …).
-- `NpsStatusCodes.NPS_SERVER_UNSUPPORTED` — new `"NPS-SERVER-UNSUPPORTED"` status code (HTTP 501) in `src/core/status-codes.ts`.
-- `NipErrorCodes.REPUTATION_GOSSIP_FORK` / `.REPUTATION_GOSSIP_SIG_INVALID` — RFC-0004 Phase 3 gossip error codes.
-- `AssuranceLevel.fromWire("")` returns `Anonymous` instead of `Unknown` (spec §5.1.1 fix).
-
-**alpha.4 additions** — Full NPS-RFC-0002 X.509 + ACME `agent-01` NID certificate primitives:
+**Earlier additions** — Full NPS-RFC-0002 X.509 + ACME `agent-01` NID certificate primitives:
 
 - `nip.x509` — `issueLeaf` / `issueRoot` / `verify` (built on `@peculiar/x509` + native Web Crypto Ed25519).
 - `nip.acme` — `AcmeClient` + in-process `AcmeServer` + JWS / message helpers (RFC 8555 + EdDSA per RFC 8037).
