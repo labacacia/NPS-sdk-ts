@@ -158,4 +158,4 @@ node node_modules/tsup/dist/cli-default.js
 
 ## License
 
-Apache 2.0 — see [LICENSE](../../LICENSE)
+Apache 2.0 — see [LICENSE](https://github.com/labacacia/NPS-Dev/blob/main/LICENSE)

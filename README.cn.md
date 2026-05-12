@@ -158,4 +158,4 @@ npm run build
 
 ## 许可证
 
-Apache 2.0 —— 详见 [LICENSE](../../LICENSE)。
+Apache 2.0 —— 详见 [LICENSE](https://github.com/labacacia/NPS-Dev/blob/main/LICENSE)。
