@@ -9,6 +9,8 @@ Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-
 
 **v1.0.0-alpha.6 — RFC-0002 cross-SDK port (third language)** · 5 protocols · 271 tests · ≥ 98% coverage
 
+> npm registry note: `@labacacia/nps-sdk@1.0.0-alpha.6` is deprecated because the published tarball omitted `dist/`. The `alpha` dist-tag currently resolves to `1.0.0-alpha.5`; use the GitHub `v1.0.0-alpha.6` tag for source until the next npm prerelease.
+
 | Protocol | Class | Status |
 |----------|-------|--------|
 | NCP — Neural Communication Protocol | Framing, codec | ✅ |
@@ -26,7 +28,7 @@ Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-
 ## Installation
 
 ```bash
-npm install @labacacia/nps-sdk
+npm install @labacacia/nps-sdk@alpha
 ```
 
 > **Peer requirement:** Node.js 22+
