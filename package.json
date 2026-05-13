@@ -37,10 +37,21 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepack": "npm run build && node scripts/verify-pack.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
+  "files": [
+    "dist/",
+    "doc/",
+    "README.md",
+    "README.cn.md",
+    "CHANGELOG.md",
+    "CHANGELOG.cn.md",
+    "LICENSE",
+    "NOTICE"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/labacacia/NPS-sdk-ts.git"
