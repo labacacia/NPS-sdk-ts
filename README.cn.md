@@ -9,6 +9,8 @@
 
 **v1.0.0-alpha.6 — RFC-0002 跨 SDK 端口波（第三棒）** · 5 个协议 · 271 个测试 · 覆盖率 ≥ 98%
 
+> npm registry 说明：`@labacacia/nps-sdk@1.0.0-alpha.6` 已 deprecated，因为发布到 npm 的 tarball 缺少 `dist/`。当前 `alpha` dist-tag 临时指向 `1.0.0-alpha.5`；需要 alpha.6 源码时请使用 GitHub `v1.0.0-alpha.6` tag，等待下一个 npm 预发布。
+
 | 协议 | 类 | 状态 |
 |------|----|------|
 | NCP — Neural Communication Protocol | 帧、编解码器 | ✅ |
@@ -26,7 +28,7 @@
 ## 安装
 
 ```bash
-npm install @labacacia/nps-sdk
+npm install @labacacia/nps-sdk@alpha
 ```
 
 > **对等依赖：** Node.js 22+
