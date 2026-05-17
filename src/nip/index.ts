@@ -12,3 +12,6 @@ export * from "./error-codes.js";
 export * from "./verifier.js";
 export * as x509 from "./x509/index.js";
 export * as acme from "./acme/index.js";
+
+// RFC-0004 — Reputation log
+export * from "./reputation-client.js";
