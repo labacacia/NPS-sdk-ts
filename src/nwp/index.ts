@@ -4,3 +4,4 @@
 export * from "./frames.js";
 export * from "./registry.js";
 export * from "./client.js";
+export * from "./anchor-client.js";
