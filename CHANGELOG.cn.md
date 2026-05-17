@@ -8,6 +8,20 @@
 
 ---
 
+## [1.0.0-alpha.7] —— 2026-05-17
+
+### 新增
+
+- **`nip/reputation-client.ts` — `ReputationLogClient`（NPS-RFC-0004 Phase 2）**：基于 fetch 的声誉日志 operator 完整客户端。`submitEntry`、`queryEntries`、`getSth`、`getProof`、`getGossipSth`。`verifyInclusion` 使用 `@noble/hashes/sha256` 在本地执行 RFC 9162 §2.1.3.2 Merkle audit-path 验证。`signEntry` / `verifyEntry` 使用 `@noble/ed25519` 签名验证条目。Wire 类型：`ReputationLogEntry`、`SignedTreeHead`、`InclusionProof`、`ObservationWindow`。`AnchorTopologyError` 携带 `nwpErrorCode` + `npsStatus`。30 条回归测试。从 `@labacacia/nps-sdk/nip` 重新导出。
+
+- **`nwp/anchor-client.ts` — `AnchorNodeClient`（NPS-CR-0002）**：基于 fetch 的 Anchor Node 拓扑查询客户端。`getSnapshot`（topology.snapshot）和 `subscribe` async generator（topology.stream NDJSON）。判别联合类型 `TopologyEvent`，包含 `member_joined`、`member_left`、`member_updated`、`anchor_state`、`resync_required` 五种 kind。`AnchorTopologyError` 处理协议错误。24 条回归测试。
+
+### 跟随套件
+
+本次跟随 NPS 套件 `v1.0.0-alpha.7`。
+
+---
+
 ## [1.0.0-alpha.6] —— 2026-05-14
 
 ### 变更
@@ -135,5 +149,6 @@
 
 作为 NPS 套件 `v1.0.0-alpha.1` 的一部分首次公开 alpha。
 
+[1.0.0-alpha.7]: https://github.com/labacacia/NPS-sdk-ts/releases/tag/v1.0.0-alpha.7
 [1.0.0-alpha.2]: https://github.com/LabAcacia/nps/releases/tag/v1.0.0-alpha.2
 [1.0.0-alpha.1]: https://github.com/LabAcacia/nps/releases/tag/v1.0.0-alpha.1
