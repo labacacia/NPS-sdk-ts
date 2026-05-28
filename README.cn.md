@@ -2,7 +2,7 @@
 
 # @labacacia/nps-sdk — TypeScript / Node.js
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v1.0.0--alpha.7-orange.svg)](CHANGELOG.cn.md)
+[![Release](https://img.shields.io/badge/release-v1.0.0--alpha.8-orange.svg)](CHANGELOG.cn.md)
 [![NCP](https://img.shields.io/badge/NCP-v0.6-5b8cff.svg)]()
 [![NWP](https://img.shields.io/badge/NWP-v0.12-4af0b0.svg)]()
 [![NIP](https://img.shields.io/badge/NIP-v0.8-7b61ff.svg)]()
@@ -14,7 +14,7 @@
 
 ## 状态
 
-**v1.0.0-alpha.7 — ReputationLogClient（RFC-0004 Ph2）· AnchorNodeClient 测试覆盖** · 5 个协议 · 271 个测试 · 覆盖率 ≥ 98%
+**v1.0.0-alpha.8 —— 跟进 NPS 套件 alpha.8** · 5 个协议 · 271 个测试 · 覆盖率 ≥ 98%
 
 | 协议 | 类 | 状态 |
 |------|----|------|

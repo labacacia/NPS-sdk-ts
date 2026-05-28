@@ -22,6 +22,7 @@ export enum FrameType {
   // NWP  0x10–0x1F
   QUERY        = 0x10,
   ACTION       = 0x11,
+  SUBSCRIBE    = 0x12,
 
   // NIP  0x20–0x2F
   IDENT        = 0x20,

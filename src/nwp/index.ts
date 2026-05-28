@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export * from "./frames.js";
+export * from "./manifest.js";
 export * from "./registry.js";
 export * from "./client.js";
 export * from "./anchor-client.js";

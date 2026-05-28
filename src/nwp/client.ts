@@ -12,11 +12,14 @@ import { registerNcpFrames } from "../ncp/registry.js";
 import { CapsFrame } from "../ncp/frames.js";
 import type { StreamFrame } from "../ncp/frames.js";
 import { registerNwpFrames } from "./registry.js";
-import { ActionFrame, asyncActionResponseFromDict } from "./frames.js";
-import type { AnchorFrame } from "../ncp/frames.js";
+import { ActionFrame, SubscribeFrame, asyncActionResponseFromDict } from "./frames.js";
 import type { QueryFrame, AsyncActionResponse } from "./frames.js";
+import type { NeuralWebManifest } from "../nwp/manifest.js";
 
-const CONTENT_TYPE = "application/x-nps-frame";
+// NPS-2 §9.2 / §10
+const MIME_FRAME    = "application/nwp-frame";
+const MIME_CAPSULE  = "application/nwp-capsule";
+const MIME_MANIFEST = "application/nwp-manifest+json";
 
 export class NwpClient {
   private readonly _baseUrl: string;
@@ -40,22 +43,44 @@ export class NwpClient {
     this._codec = new NpsFrameCodec(registry, codecOpts);
   }
 
-  async sendAnchor(frame: AnchorFrame): Promise<void> {
-    const wire = this._codec.encode(frame, { overrideTier: this._tier });
-    const res  = await fetch(`${this._baseUrl}/anchor`, {
-      method:  "POST",
-      body:    wire as BodyInit,
-      headers: { "Content-Type": CONTENT_TYPE, "Accept": CONTENT_TYPE },
+  // ── Discovery ──────────────────────────────────────────────────────────────
+
+  /** Fetch the NWM manifest from `/.nwm` (NPS-2 §3.2, §4). */
+  async fetchManifest(): Promise<NeuralWebManifest> {
+    const res = await fetch(`${this._baseUrl}/.nwm`, {
+      headers: { "Accept": MIME_MANIFEST },
     });
-    if (!res.ok) throw new Error(`NWP /anchor failed: HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`NWP /.nwm failed: HTTP ${res.status}`);
+    return res.json() as Promise<NeuralWebManifest>;
   }
+
+  /** Fetch the schema AnchorFrame from `/.schema` (NPS-2 §3.2). */
+  async fetchSchema(): Promise<unknown> {
+    const res = await fetch(`${this._baseUrl}/.schema`, {
+      headers: { "Accept": MIME_CAPSULE },
+    });
+    if (!res.ok) throw new Error(`NWP /.schema failed: HTTP ${res.status}`);
+    const buf = new Uint8Array(await res.arrayBuffer());
+    return this._codec.decode(buf);
+  }
+
+  /** List callable actions from `/actions` (NPS-2 §3.2). */
+  async listActions(): Promise<unknown> {
+    const res = await fetch(`${this._baseUrl}/actions`, {
+      headers: { "Accept": "application/json" },
+    });
+    if (!res.ok) throw new Error(`NWP /actions failed: HTTP ${res.status}`);
+    return res.json();
+  }
+
+  // ── Query ──────────────────────────────────────────────────────────────────
 
   async query(frame: QueryFrame): Promise<CapsFrame> {
     const wire = this._codec.encode(frame, { overrideTier: this._tier });
     const res  = await fetch(`${this._baseUrl}/query`, {
       method:  "POST",
       body:    wire as BodyInit,
-      headers: { "Content-Type": CONTENT_TYPE, "Accept": CONTENT_TYPE },
+      headers: { "Content-Type": MIME_FRAME, "Accept": MIME_CAPSULE },
     });
     if (!res.ok) throw new Error(`NWP /query failed: HTTP ${res.status}`);
 
@@ -72,7 +97,7 @@ export class NwpClient {
     const res  = await fetch(`${this._baseUrl}/stream`, {
       method:  "POST",
       body:    wire as BodyInit,
-      headers: { "Content-Type": CONTENT_TYPE, "Accept": CONTENT_TYPE },
+      headers: { "Content-Type": MIME_FRAME, "Accept": MIME_CAPSULE },
     });
     if (!res.ok) throw new Error(`NWP /stream failed: HTTP ${res.status}`);
     if (res.body === null) return;
@@ -91,12 +116,14 @@ export class NwpClient {
     }
   }
 
+  // ── Invoke ─────────────────────────────────────────────────────────────────
+
   async invoke(frame: ActionFrame): Promise<unknown> {
     const wire = this._codec.encode(frame, { overrideTier: this._tier });
     const res  = await fetch(`${this._baseUrl}/invoke`, {
       method:  "POST",
       body:    wire as BodyInit,
-      headers: { "Content-Type": CONTENT_TYPE, "Accept": CONTENT_TYPE },
+      headers: { "Content-Type": MIME_FRAME, "Accept": MIME_CAPSULE },
     });
     if (!res.ok) throw new Error(`NWP /invoke failed: HTTP ${res.status}`);
 
@@ -105,10 +132,28 @@ export class NwpClient {
     }
 
     const contentType = res.headers.get("content-type") ?? "";
-    if (contentType.includes(CONTENT_TYPE)) {
+    if (contentType.includes(MIME_CAPSULE)) {
       const buf = new Uint8Array(await res.arrayBuffer());
       return this._codec.decode(buf);
     }
     return res.json();
+  }
+
+  // ── Subscribe ──────────────────────────────────────────────────────────────
+
+  async subscribe(frame: SubscribeFrame): Promise<CapsFrame> {
+    const wire = this._codec.encode(frame, { overrideTier: this._tier });
+    const res  = await fetch(`${this._baseUrl}/subscribe`, {
+      method:  "POST",
+      body:    wire as BodyInit,
+      headers: { "Content-Type": MIME_FRAME, "Accept": MIME_CAPSULE },
+    });
+    if (!res.ok) throw new Error(`NWP /subscribe failed: HTTP ${res.status}`);
+    const buf    = new Uint8Array(await res.arrayBuffer());
+    const result = this._codec.decode(buf);
+    if (!(result instanceof CapsFrame)) {
+      throw new TypeError(`Expected CapsFrame ack from /subscribe, got ${result.constructor.name}.`);
+    }
+    return result;
   }
 }
