@@ -29,23 +29,35 @@ export class AnnounceFrame implements NpsFrame {
   readonly preferredTier = EncodingTier.MSGPACK;
 
   constructor(
-    public readonly nid:          string,
-    public readonly addresses:    readonly NdpAddress[],
-    public readonly capabilities: readonly string[],
-    public readonly ttl:          number,
-    public readonly timestamp:    string,
-    public readonly signature:    string,
-    public readonly nodeType?:    string,
+    public readonly nid:                  string,
+    public readonly addresses:            readonly NdpAddress[],
+    public readonly capabilities:         readonly string[],
+    public readonly ttl:                  number,
+    public readonly timestamp:            string,
+    public readonly signature:            string,
+    public readonly nodeType?:            string,
+    public readonly node_roles?:          string[],
+    public readonly cluster_anchor?:      string,
+    public readonly spawn_spec_ref?:      string,
+    public readonly bridge_protocols?:    string[],
+    public readonly activation_mode?:     string,
+    public readonly activation_endpoint?: string,
   ) {}
 
   unsignedDict(): Record<string, unknown> {
     return {
-      nid:          this.nid,
-      addresses:    this.addresses,
-      capabilities: this.capabilities,
-      ttl:          this.ttl,
-      timestamp:    this.timestamp,
-      node_type:    this.nodeType ?? null,
+      nid:                  this.nid,
+      addresses:            this.addresses,
+      capabilities:         this.capabilities,
+      ttl:                  this.ttl,
+      timestamp:            this.timestamp,
+      node_type:            this.nodeType            ?? null,
+      node_roles:           this.node_roles           ?? null,
+      cluster_anchor:       this.cluster_anchor       ?? null,
+      spawn_spec_ref:       this.spawn_spec_ref       ?? null,
+      bridge_protocols:     this.bridge_protocols     ?? null,
+      activation_mode:      this.activation_mode      ?? null,
+      activation_endpoint:  this.activation_endpoint  ?? null,
     };
   }
 
@@ -55,13 +67,19 @@ export class AnnounceFrame implements NpsFrame {
 
   static fromDict(data: Record<string, unknown>): AnnounceFrame {
     return new AnnounceFrame(
-      data["nid"]          as string,
-      data["addresses"]    as NdpAddress[],
-      data["capabilities"] as string[],
-      data["ttl"]          as number,
-      data["timestamp"]    as string,
-      data["signature"]    as string,
-      (data["node_type"]    as string | null) ?? undefined,
+      data["nid"]                  as string,
+      data["addresses"]            as NdpAddress[],
+      data["capabilities"]         as string[],
+      data["ttl"]                  as number,
+      data["timestamp"]            as string,
+      data["signature"]            as string,
+      (data["node_type"]            as string | null) ?? undefined,
+      ((data["node_roles"] ?? data["node_kind"]) as string[] | null) ?? undefined,
+      (data["cluster_anchor"]       as string | null) ?? undefined,
+      (data["spawn_spec_ref"]       as string | null) ?? undefined,
+      (data["bridge_protocols"]     as string[] | null) ?? undefined,
+      (data["activation_mode"]      as string | null) ?? undefined,
+      (data["activation_endpoint"]  as string | null) ?? undefined,
     );
   }
 }
