@@ -196,6 +196,47 @@ export class ActionFrame implements NpsFrame {
   }
 }
 
+// ── SubscribeFrame ───────────────────────────────────────────────────────────
+
+export class SubscribeFrame implements NpsFrame {
+  readonly frameType     = FrameType.SUBSCRIBE;
+  readonly preferredTier = EncodingTier.MSGPACK;
+
+  constructor(
+    public readonly action:            string,
+    public readonly streamId:          string,
+    public readonly anchorRef?:        string,
+    public readonly filter?:           Record<string, unknown>,
+    public readonly heartbeatInterval?: number,
+    public readonly resumeFromSeq?:    number,
+    public readonly type?:             string,
+  ) {}
+
+  toDict(): Record<string, unknown> {
+    return {
+      action:             this.action,
+      stream_id:          this.streamId,
+      anchor_ref:         this.anchorRef         ?? null,
+      filter:             this.filter            ?? null,
+      heartbeat_interval: this.heartbeatInterval ?? null,
+      resume_from_seq:    this.resumeFromSeq     ?? null,
+      type:               this.type              ?? null,
+    };
+  }
+
+  static fromDict(data: Record<string, unknown>): SubscribeFrame {
+    return new SubscribeFrame(
+      data["action"]       as string,
+      data["stream_id"]    as string,
+      (data["anchor_ref"]  as string | null) ?? undefined,
+      (data["filter"]      as Record<string, unknown> | null) ?? undefined,
+      (data["heartbeat_interval"] as number | null) ?? undefined,
+      (data["resume_from_seq"]    as number | null) ?? undefined,
+      (data["type"]        as string | null) ?? undefined,
+    );
+  }
+}
+
 // ── AsyncActionResponse ───────────────────────────────────────────────────────
 
 export interface AsyncActionResponse {

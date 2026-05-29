@@ -10,7 +10,7 @@ import { EncodingTier } from "../core/frames.js";
 import { FrameRegistry } from "../core/registry.js";
 import { registerNcpFrames } from "../ncp/registry.js";
 import { CapsFrame } from "../ncp/frames.js";
-import type { StreamFrame } from "../ncp/frames.js";
+import type { AnchorFrame, StreamFrame } from "../ncp/frames.js";
 import { registerNwpFrames } from "./registry.js";
 import { ActionFrame, SubscribeFrame, asyncActionResponseFromDict } from "./frames.js";
 import type { QueryFrame, AsyncActionResponse } from "./frames.js";
@@ -75,6 +75,16 @@ export class NwpClient {
 
   // ── Query ──────────────────────────────────────────────────────────────────
 
+  async sendAnchor(frame: AnchorFrame): Promise<void> {
+    const wire = this._codec.encode(frame, { overrideTier: this._tier });
+    const res  = await fetch(`${this._baseUrl}/anchor`, {
+      method:  "POST",
+      body:    wire as BodyInit,
+      headers: { "Content-Type": MIME_FRAME, "Accept": MIME_CAPSULE },
+    });
+    if (!res.ok) throw new Error(`NWP /anchor failed: HTTP ${res.status}`);
+  }
+
   async query(frame: QueryFrame): Promise<CapsFrame> {
     const wire = this._codec.encode(frame, { overrideTier: this._tier });
     const res  = await fetch(`${this._baseUrl}/query`, {
@@ -132,7 +142,7 @@ export class NwpClient {
     }
 
     const contentType = res.headers.get("content-type") ?? "";
-    if (contentType.includes(MIME_CAPSULE)) {
+    if (contentType.includes(MIME_CAPSULE) || contentType.includes(MIME_FRAME) || contentType.includes("application/x-nps-frame")) {
       const buf = new Uint8Array(await res.arrayBuffer());
       return this._codec.decode(buf);
     }
