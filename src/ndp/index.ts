@@ -6,3 +6,4 @@ export * from "./registry.js";
 export * from "./ndp-registry.js";
 export * from "./validator.js";
 export * from "./dns-txt.js";
+export * from "./ndp-error-codes.js";

@@ -1,0 +1,119 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 LabAcacia / INNO LOTUS PTY LTD
+//
+// NWP Error Codes — all 47 protocol error codes per spec/error-codes.md
+
+// ── Auth / NID ────────────────────────────────────────────────────────────────
+export const NWP_AUTH_NID_SCOPE_VIOLATION     = "NWP-AUTH-NID-SCOPE-VIOLATION" as const;
+export const NWP_AUTH_NID_EXPIRED             = "NWP-AUTH-NID-EXPIRED" as const;
+export const NWP_AUTH_NID_REVOKED             = "NWP-AUTH-NID-REVOKED" as const;
+export const NWP_AUTH_NID_UNTRUSTED_ISSUER    = "NWP-AUTH-NID-UNTRUSTED-ISSUER" as const;
+export const NWP_AUTH_NID_CAPABILITY_MISSING  = "NWP-AUTH-NID-CAPABILITY-MISSING" as const;
+export const NWP_AUTH_ASSURANCE_TOO_LOW       = "NWP-AUTH-ASSURANCE-TOO-LOW" as const;
+/** @deprecated RFC-0005: use NWP_REPUTATION_REJECTED / NWP_REPUTATION_BANNED */
+export const NWP_AUTH_REPUTATION_BLOCKED      = "NWP-AUTH-REPUTATION-BLOCKED" as const;
+
+// ── Reputation (RFC-0005) ─────────────────────────────────────────────────────
+export const NWP_REPUTATION_THROTTLED         = "NWP-REPUTATION-THROTTLED" as const;
+export const NWP_REPUTATION_REJECTED          = "NWP-REPUTATION-REJECTED" as const;
+export const NWP_REPUTATION_BANNED            = "NWP-REPUTATION-BANNED" as const;
+
+// ── Query ─────────────────────────────────────────────────────────────────────
+export const NWP_QUERY_FILTER_INVALID         = "NWP-QUERY-FILTER-INVALID" as const;
+export const NWP_QUERY_FIELD_UNKNOWN          = "NWP-QUERY-FIELD-UNKNOWN" as const;
+export const NWP_QUERY_CURSOR_INVALID         = "NWP-QUERY-CURSOR-INVALID" as const;
+export const NWP_QUERY_REGEX_UNSAFE           = "NWP-QUERY-REGEX-UNSAFE" as const;
+export const NWP_QUERY_VECTOR_UNSUPPORTED     = "NWP-QUERY-VECTOR-UNSUPPORTED" as const;
+export const NWP_QUERY_AGGREGATE_UNSUPPORTED  = "NWP-QUERY-AGGREGATE-UNSUPPORTED" as const;
+export const NWP_QUERY_AGGREGATE_INVALID      = "NWP-QUERY-AGGREGATE-INVALID" as const;
+export const NWP_QUERY_STREAM_UNSUPPORTED     = "NWP-QUERY-STREAM-UNSUPPORTED" as const;
+
+// ── Action ────────────────────────────────────────────────────────────────────
+export const NWP_ACTION_NOT_FOUND             = "NWP-ACTION-NOT-FOUND" as const;
+export const NWP_ACTION_PARAMS_INVALID        = "NWP-ACTION-PARAMS-INVALID" as const;
+export const NWP_ACTION_IDEMPOTENCY_CONFLICT  = "NWP-ACTION-IDEMPOTENCY-CONFLICT" as const;
+
+// ── Async task ────────────────────────────────────────────────────────────────
+export const NWP_TASK_NOT_FOUND               = "NWP-TASK-NOT-FOUND" as const;
+export const NWP_TASK_ALREADY_CANCELLED       = "NWP-TASK-ALREADY-CANCELLED" as const;
+export const NWP_TASK_ALREADY_COMPLETED       = "NWP-TASK-ALREADY-COMPLETED" as const;
+export const NWP_TASK_ALREADY_FAILED          = "NWP-TASK-ALREADY-FAILED" as const;
+
+// ── Subscribe ─────────────────────────────────────────────────────────────────
+export const NWP_SUBSCRIBE_STREAM_NOT_FOUND   = "NWP-SUBSCRIBE-STREAM-NOT-FOUND" as const;
+export const NWP_SUBSCRIBE_LIMIT_EXCEEDED     = "NWP-SUBSCRIBE-LIMIT-EXCEEDED" as const;
+export const NWP_SUBSCRIBE_FILTER_UNSUPPORTED = "NWP-SUBSCRIBE-FILTER-UNSUPPORTED" as const;
+export const NWP_SUBSCRIBE_INTERRUPTED        = "NWP-SUBSCRIBE-INTERRUPTED" as const;
+export const NWP_SUBSCRIBE_SEQ_TOO_OLD        = "NWP-SUBSCRIBE-SEQ-TOO-OLD" as const;
+
+// ── Budget / limits ───────────────────────────────────────────────────────────
+export const NWP_BUDGET_EXCEEDED              = "NWP-BUDGET-EXCEEDED" as const;
+export const NWP_CGN_LIMIT_EXCEEDED           = "NWP-CGN-LIMIT-EXCEEDED" as const;
+export const NWP_DEPTH_EXCEEDED               = "NWP-DEPTH-EXCEEDED" as const;
+export const NWP_RATE_LIMIT_EXCEEDED          = "NWP-RATE-LIMIT-EXCEEDED" as const;
+
+// ── Graph / node ──────────────────────────────────────────────────────────────
+export const NWP_GRAPH_CYCLE                  = "NWP-GRAPH-CYCLE" as const;
+export const NWP_NODE_UNAVAILABLE             = "NWP-NODE-UNAVAILABLE" as const;
+
+// ── Manifest ──────────────────────────────────────────────────────────────────
+export const NWP_MANIFEST_VERSION_UNSUPPORTED = "NWP-MANIFEST-VERSION-UNSUPPORTED" as const;
+export const NWP_MANIFEST_NODE_TYPE_REMOVED   = "NWP-MANIFEST-NODE-TYPE-REMOVED" as const;
+export const NWP_MANIFEST_NODE_TYPE_UNKNOWN   = "NWP-MANIFEST-NODE-TYPE-UNKNOWN" as const;
+
+// ── Reserved / unsupported ────────────────────────────────────────────────────
+export const NWP_RESERVED_TYPE_UNSUPPORTED    = "NWP-RESERVED-TYPE-UNSUPPORTED" as const;
+
+// ── Topology (NPS-CR-0002) ────────────────────────────────────────────────────
+export const NWP_TOPOLOGY_UNAUTHORIZED        = "NWP-TOPOLOGY-UNAUTHORIZED" as const;
+export const NWP_TOPOLOGY_UNSUPPORTED_SCOPE   = "NWP-TOPOLOGY-UNSUPPORTED-SCOPE" as const;
+export const NWP_TOPOLOGY_DEPTH_UNSUPPORTED   = "NWP-TOPOLOGY-DEPTH-UNSUPPORTED" as const;
+export const NWP_TOPOLOGY_FILTER_UNSUPPORTED  = "NWP-TOPOLOGY-FILTER-UNSUPPORTED" as const;
+
+/** Maps each NWP error code to its NPS status code. */
+export const NWP_ERROR_TO_NPS_STATUS: Record<string, string> = {
+  "NWP-AUTH-NID-SCOPE-VIOLATION":     "NPS-AUTH-FORBIDDEN",
+  "NWP-AUTH-NID-EXPIRED":             "NPS-AUTH-UNAUTHENTICATED",
+  "NWP-AUTH-NID-REVOKED":             "NPS-AUTH-UNAUTHENTICATED",
+  "NWP-AUTH-NID-UNTRUSTED-ISSUER":    "NPS-AUTH-UNAUTHENTICATED",
+  "NWP-AUTH-NID-CAPABILITY-MISSING":  "NPS-AUTH-FORBIDDEN",
+  "NWP-AUTH-ASSURANCE-TOO-LOW":       "NPS-AUTH-FORBIDDEN",
+  "NWP-AUTH-REPUTATION-BLOCKED":      "NPS-AUTH-FORBIDDEN",
+  "NWP-REPUTATION-THROTTLED":         "NPS-CLIENT-RATE-LIMITED",
+  "NWP-REPUTATION-REJECTED":          "NPS-AUTH-FORBIDDEN",
+  "NWP-REPUTATION-BANNED":            "NPS-AUTH-FORBIDDEN",
+  "NWP-QUERY-FILTER-INVALID":         "NPS-CLIENT-BAD-PARAM",
+  "NWP-QUERY-FIELD-UNKNOWN":          "NPS-CLIENT-BAD-PARAM",
+  "NWP-QUERY-CURSOR-INVALID":         "NPS-CLIENT-BAD-PARAM",
+  "NWP-QUERY-REGEX-UNSAFE":           "NPS-CLIENT-BAD-PARAM",
+  "NWP-QUERY-VECTOR-UNSUPPORTED":     "NPS-SERVER-UNSUPPORTED",
+  "NWP-QUERY-AGGREGATE-UNSUPPORTED":  "NPS-SERVER-UNSUPPORTED",
+  "NWP-QUERY-AGGREGATE-INVALID":      "NPS-CLIENT-BAD-PARAM",
+  "NWP-QUERY-STREAM-UNSUPPORTED":     "NPS-SERVER-UNSUPPORTED",
+  "NWP-ACTION-NOT-FOUND":             "NPS-CLIENT-NOT-FOUND",
+  "NWP-ACTION-PARAMS-INVALID":        "NPS-CLIENT-UNPROCESSABLE",
+  "NWP-ACTION-IDEMPOTENCY-CONFLICT":  "NPS-CLIENT-CONFLICT",
+  "NWP-TASK-NOT-FOUND":               "NPS-CLIENT-NOT-FOUND",
+  "NWP-TASK-ALREADY-CANCELLED":       "NPS-CLIENT-CONFLICT",
+  "NWP-TASK-ALREADY-COMPLETED":       "NPS-CLIENT-CONFLICT",
+  "NWP-TASK-ALREADY-FAILED":          "NPS-CLIENT-CONFLICT",
+  "NWP-SUBSCRIBE-STREAM-NOT-FOUND":   "NPS-CLIENT-NOT-FOUND",
+  "NWP-SUBSCRIBE-LIMIT-EXCEEDED":     "NPS-LIMIT-EXCEEDED",
+  "NWP-SUBSCRIBE-FILTER-UNSUPPORTED": "NPS-SERVER-UNSUPPORTED",
+  "NWP-SUBSCRIBE-INTERRUPTED":        "NPS-SERVER-UNAVAILABLE",
+  "NWP-SUBSCRIBE-SEQ-TOO-OLD":        "NPS-CLIENT-CONFLICT",
+  "NWP-BUDGET-EXCEEDED":              "NPS-LIMIT-BUDGET",
+  "NWP-CGN-LIMIT-EXCEEDED":           "NPS-CLIENT-REQUEST-TOO-LARGE",
+  "NWP-DEPTH-EXCEEDED":               "NPS-CLIENT-BAD-PARAM",
+  "NWP-GRAPH-CYCLE":                  "NPS-CLIENT-UNPROCESSABLE",
+  "NWP-NODE-UNAVAILABLE":             "NPS-SERVER-UNAVAILABLE",
+  "NWP-MANIFEST-VERSION-UNSUPPORTED": "NPS-CLIENT-BAD-PARAM",
+  "NWP-MANIFEST-NODE-TYPE-REMOVED":   "NPS-CLIENT-BAD-FRAME",
+  "NWP-MANIFEST-NODE-TYPE-UNKNOWN":   "NPS-CLIENT-BAD-FRAME",
+  "NWP-RATE-LIMIT-EXCEEDED":          "NPS-LIMIT-RATE",
+  "NWP-RESERVED-TYPE-UNSUPPORTED":    "NPS-SERVER-UNSUPPORTED",
+  "NWP-TOPOLOGY-UNAUTHORIZED":        "NPS-AUTH-FORBIDDEN",
+  "NWP-TOPOLOGY-UNSUPPORTED-SCOPE":   "NPS-CLIENT-BAD-PARAM",
+  "NWP-TOPOLOGY-DEPTH-UNSUPPORTED":   "NPS-CLIENT-BAD-PARAM",
+  "NWP-TOPOLOGY-FILTER-UNSUPPORTED":  "NPS-CLIENT-BAD-PARAM",
+};

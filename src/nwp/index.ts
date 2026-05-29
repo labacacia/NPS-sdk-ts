@@ -6,3 +6,4 @@ export * from "./manifest.js";
 export * from "./registry.js";
 export * from "./client.js";
 export * from "./anchor-client.js";
+export * from "./nwp-error-codes.js";

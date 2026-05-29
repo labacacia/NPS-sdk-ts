@@ -19,10 +19,8 @@ const CAPS  = ["nwp/query", "nwp/stream"];
 function makeAnnounce(nid = NID, ttl = 300, id?: NipIdentity): AnnounceFrame {
   const ident     = id ?? NipIdentity.generate();
   const timestamp = "2026-01-01T00:00:00Z";
-  const unsigned  = {
-    nid, addresses: ADDRS, capabilities: CAPS, ttl, timestamp, node_type: null,
-  };
-  const sig = ident.sign(unsigned);
+  const tmp = new AnnounceFrame(nid, ADDRS, CAPS, ttl, timestamp);
+  const sig = ident.sign(tmp.unsignedDict());
   return new AnnounceFrame(nid, ADDRS, CAPS, ttl, timestamp, sig);
 }
 
