@@ -94,7 +94,7 @@ export class QueryFrame implements NpsFrame {
   ) {}
 
   toDict(): Record<string, unknown> {
-    return {
+    const d: Record<string, unknown> = {
       anchor_ref:    this.anchorRef    ?? null,
       filter:        this.filter       ?? null,
       limit:         this.limit        ?? null,
@@ -108,10 +108,11 @@ export class QueryFrame implements NpsFrame {
       auto_anchor:   this.autoAnchor   ?? null,
       stream:        this.stream       ?? null,
       aggregate:     this.aggregate    ?? null,
-      token_budget:  this.tokenBudget  ?? null,
-      tokenizer:     this.tokenizer    ?? null,
       request_id:    this.requestId    ?? null,
     };
+    if (this.tokenBudget !== undefined) d["token_budget"] = this.tokenBudget;
+    if (this.tokenizer   !== undefined) d["tokenizer"]    = this.tokenizer;
+    return d;
   }
 
   static fromDict(data: Record<string, unknown>): QueryFrame {
