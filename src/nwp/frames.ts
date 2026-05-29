@@ -8,243 +8,191 @@ import type { NpsFrame } from "../core/codec.js";
 
 export interface QueryOrderClause {
   field: string;
-  dir:   "ASC" | "DESC";
+  dir:   "asc" | "desc" | "ASC" | "DESC";
 }
 
 export interface VectorSearchOptions {
-  field?:     string;
-  vector:     readonly number[];
-  top_k?:     number;
-  threshold?: number;
-  metric?:    "cosine" | "euclidean" | "dot_product";
+  vector:      readonly number[];
+  topK?:       number;
+  minScore?:   number;
+  vectorField?: string;
+  field?:      string;
+  top_k?:      number;
+  threshold?:  number;
+  metric?:     "cosine" | "dot" | "euclidean" | string;
+}
+
+export const NWP_TOPOLOGY_SNAPSHOT = "topology.snapshot" as const;
+export const NWP_TOPOLOGY_STREAM   = "topology.stream" as const;
+
+export interface TopologySnapshotRequest {
+  kind: typeof NWP_TOPOLOGY_SNAPSHOT;
+  anchorRef?: string;
+  includeBridges?: boolean;
+  includeCapabilities?: boolean;
+  maxDepth?: number;
+  since?: string;
+}
+
+export interface TopologyStreamRequest {
+  kind: typeof NWP_TOPOLOGY_STREAM;
+  anchorRef?: string;
+  includeInitialSnapshot?: boolean;
+  eventTypes?: readonly string[];
+  since?: string;
+}
+
+export interface TopologyMember {
+  nodeId: string;
+  nodeType?: string;
+  anchorRef?: string;
+  capabilities?: readonly string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface TopologyEvent {
+  eventId: string;
+  eventType: string;
+  nodeId?: string;
+  anchorRef?: string;
+  timestamp?: string;
+  payload?: Record<string, unknown>;
+}
+
+export interface BridgeNodeSpec {
+  bridgeId: string;
+  sourceProtocol: string;
+  targetProtocol: string;
+  sourceRef?: string;
+  targetRef?: string;
+  capabilities?: readonly string[];
+  metadata?: Record<string, unknown>;
 }
 
 // ── QueryFrame ────────────────────────────────────────────────────────────────
-
-export interface QueryFrameOptions {
-  anchorRef?:    string;
-  filter?:       Record<string, unknown>;
-  limit?:        number;
-  cursor?:       string;
-  order?:        readonly QueryOrderClause[];
-  fields?:       readonly string[];
-  vectorSearch?: VectorSearchOptions;
-  depth?:        number;
-  type?:         string;
-  autoAnchor?:   boolean;
-  stream?:       boolean;
-  aggregate?:    Record<string, unknown>;
-  tokenBudget?:  number;
-  tokenizer?:    string;
-  requestId?:    string;
-}
 
 export class QueryFrame implements NpsFrame {
   readonly frameType     = FrameType.QUERY;
   readonly preferredTier = EncodingTier.MSGPACK;
 
-  readonly anchorRef?:    string;
-  readonly filter?:       Record<string, unknown>;
-  readonly limit?:        number;
-  readonly cursor?:       string;
-  readonly order?:        readonly QueryOrderClause[];
-  readonly fields?:       readonly string[];
-  readonly vectorSearch?: VectorSearchOptions;
-  readonly depth?:        number;
-  readonly type?:         string;
-  readonly autoAnchor?:   boolean;
-  readonly stream?:       boolean;
-  readonly aggregate?:    Record<string, unknown>;
-  readonly tokenBudget?:  number;
-  readonly tokenizer?:    string;
-  readonly requestId?:    string;
-
-  constructor(opts: QueryFrameOptions = {}) {
-    this.anchorRef    = opts.anchorRef;
-    this.filter       = opts.filter;
-    this.limit        = opts.limit;
-    this.cursor       = opts.cursor;
-    this.order        = opts.order;
-    this.fields       = opts.fields;
-    this.vectorSearch = opts.vectorSearch;
-    this.depth        = opts.depth;
-    this.type         = opts.type;
-    this.autoAnchor   = opts.autoAnchor;
-    this.stream       = opts.stream;
-    this.aggregate    = opts.aggregate;
-    this.tokenBudget  = opts.tokenBudget;
-    this.tokenizer    = opts.tokenizer;
-    this.requestId    = opts.requestId;
-  }
+  constructor(
+    public readonly anchorRef?:    string,
+    public readonly filter?:       Record<string, unknown>,
+    public readonly limit?:        number,
+    public readonly offset?:       number,
+    public readonly orderBy?:      readonly QueryOrderClause[],
+    public readonly fields?:       readonly string[],
+    public readonly vectorSearch?: VectorSearchOptions,
+    public readonly depth?:        number,
+    public readonly cursor?:       string,
+    public readonly autoAnchor?:   boolean,
+    public readonly stream?:       boolean,
+    public readonly aggregate?:    Record<string, unknown>,
+    public readonly tokenBudget?:  number,
+    public readonly tokenizer?:    string,
+    public readonly requestId?:    string,
+  ) {}
 
   toDict(): Record<string, unknown> {
-    const d: Record<string, unknown> = {
+    return {
       anchor_ref:    this.anchorRef    ?? null,
       filter:        this.filter       ?? null,
       limit:         this.limit        ?? null,
+      offset:        this.offset       ?? null,
       cursor:        this.cursor       ?? null,
-      order:         this.order        ?? null,
+      order:         this.orderBy      ?? null,
+      order_by:      this.orderBy      ?? null,
       fields:        this.fields       ?? null,
-      vector_search: this.vectorSearch ?? null,
+      vector_search: normalizeVectorSearch(this.vectorSearch),
       depth:         this.depth        ?? null,
+      auto_anchor:   this.autoAnchor   ?? null,
+      stream:        this.stream       ?? null,
+      aggregate:     this.aggregate    ?? null,
+      token_budget:  this.tokenBudget  ?? null,
+      tokenizer:     this.tokenizer    ?? null,
+      request_id:    this.requestId    ?? null,
     };
-    if (this.type        !== undefined) d["type"]         = this.type;
-    if (this.autoAnchor  !== undefined) d["auto_anchor"]  = this.autoAnchor;
-    if (this.stream      !== undefined) d["stream"]       = this.stream;
-    if (this.aggregate   !== undefined) d["aggregate"]    = this.aggregate;
-    if (this.tokenBudget !== undefined) d["token_budget"] = this.tokenBudget;
-    if (this.tokenizer   !== undefined) d["tokenizer"]    = this.tokenizer;
-    if (this.requestId   !== undefined) d["request_id"]   = this.requestId;
-    return d;
   }
 
   static fromDict(data: Record<string, unknown>): QueryFrame {
-    return new QueryFrame({
-      anchorRef:    (data["anchor_ref"]    as string  | null) ?? undefined,
-      filter:       (data["filter"]        as Record<string, unknown> | null) ?? undefined,
-      limit:        (data["limit"]         as number  | null) ?? undefined,
-      cursor:       (data["cursor"]        as string  | null) ?? undefined,
-      order:        (data["order"]         as QueryOrderClause[] | null) ?? undefined,
-      fields:       (data["fields"]        as string[] | null) ?? undefined,
-      vectorSearch: (data["vector_search"] as VectorSearchOptions | null) ?? undefined,
-      depth:        (data["depth"]         as number  | null) ?? undefined,
-      type:         (data["type"]          as string  | null) ?? undefined,
-      autoAnchor:   (data["auto_anchor"]   as boolean | null) ?? undefined,
-      stream:       (data["stream"]        as boolean | null) ?? undefined,
-      aggregate:    (data["aggregate"]     as Record<string, unknown> | null) ?? undefined,
-      tokenBudget:  (data["token_budget"]  as number  | null) ?? undefined,
-      tokenizer:    (data["tokenizer"]     as string  | null) ?? undefined,
-      requestId:    (data["request_id"]    as string  | null) ?? undefined,
-    });
+    const order = (data["order"] ?? data["order_by"]) as QueryOrderClause[] | null | undefined;
+    return new QueryFrame(
+      (data["anchor_ref"]    as string  | null) ?? undefined,
+      (data["filter"]        as Record<string, unknown> | null) ?? undefined,
+      (data["limit"]         as number  | null) ?? undefined,
+      (data["offset"]        as number  | null) ?? undefined,
+      order ?? undefined,
+      (data["fields"]        as string[] | null) ?? undefined,
+      denormalizeVectorSearch((data["vector_search"] as Record<string, unknown> | null) ?? undefined),
+      (data["depth"]         as number  | null) ?? undefined,
+      (data["cursor"]        as string  | null) ?? undefined,
+      (data["auto_anchor"]   as boolean | null) ?? undefined,
+      (data["stream"]        as boolean | null) ?? undefined,
+      (data["aggregate"]     as Record<string, unknown> | null) ?? undefined,
+      (data["token_budget"]  as number  | null) ?? undefined,
+      (data["tokenizer"]     as string  | null) ?? undefined,
+      (data["request_id"]    as string  | null) ?? undefined,
+    );
   }
 }
 
-// ── ActionFrame ───────────────────────────────────────────────────────────────
-
-export interface ActionFrameOptions {
-  actionId:        string;
-  params?:         Record<string, unknown>;
-  async_?:         boolean;
-  idempotencyKey?: string;
-  timeoutMs?:      number;
-  callbackUrl?:    string;
-  priority?:       "low" | "normal" | "high";
-  requestId?:      string;
+function normalizeVectorSearch(v?: VectorSearchOptions): Record<string, unknown> | null {
+  if (v == null) return null;
+  return {
+    field:     v.field ?? v.vectorField ?? null,
+    vector:    [...v.vector],
+    top_k:     v.top_k ?? v.topK ?? null,
+    threshold: v.threshold ?? v.minScore ?? null,
+    metric:    v.metric ?? null,
+  };
 }
+
+function denormalizeVectorSearch(v?: Record<string, unknown>): VectorSearchOptions | undefined {
+  if (v == null) return undefined;
+  return {
+    vector:      (v["vector"] as number[] | undefined) ?? [],
+    topK:        (v["topK"] ?? v["top_k"]) as number | undefined,
+    minScore:    (v["minScore"] ?? v["threshold"]) as number | undefined,
+    vectorField: (v["vectorField"] ?? v["field"]) as string | undefined,
+    field:       (v["field"] ?? v["vectorField"]) as string | undefined,
+    top_k:       (v["top_k"] ?? v["topK"]) as number | undefined,
+    threshold:   (v["threshold"] ?? v["minScore"]) as number | undefined,
+    metric:      v["metric"] as string | undefined,
+  };
+}
+
+// ── ActionFrame ───────────────────────────────────────────────────────────────
 
 export class ActionFrame implements NpsFrame {
   readonly frameType     = FrameType.ACTION;
   readonly preferredTier = EncodingTier.MSGPACK;
 
-  readonly actionId:        string;
-  readonly params?:         Record<string, unknown>;
-  readonly async_?:         boolean;
-  readonly idempotencyKey?: string;
-  readonly timeoutMs?:      number;
-  readonly callbackUrl?:    string;
-  readonly priority?:       "low" | "normal" | "high";
-  readonly requestId?:      string;
-
-  constructor(opts: ActionFrameOptions) {
-    this.actionId       = opts.actionId;
-    this.params         = opts.params;
-    this.async_         = opts.async_;
-    this.idempotencyKey = opts.idempotencyKey;
-    this.timeoutMs      = opts.timeoutMs;
-    this.callbackUrl    = opts.callbackUrl;
-    this.priority       = opts.priority;
-    this.requestId      = opts.requestId;
-  }
+  constructor(
+    public readonly actionId:        string,
+    public readonly params?:         Record<string, unknown>,
+    public readonly async_?:         boolean,
+    public readonly idempotencyKey?: string,
+    public readonly timeoutMs?:      number,
+  ) {}
 
   toDict(): Record<string, unknown> {
-    const d: Record<string, unknown> = {
+    return {
       action_id:       this.actionId,
       params:          this.params          ?? null,
       async:           this.async_          ?? false,
       idempotency_key: this.idempotencyKey  ?? null,
       timeout_ms:      this.timeoutMs       ?? null,
     };
-    if (this.callbackUrl !== undefined) d["callback_url"] = this.callbackUrl;
-    if (this.priority    !== undefined) d["priority"]     = this.priority;
-    if (this.requestId   !== undefined) d["request_id"]   = this.requestId;
-    return d;
   }
 
   static fromDict(data: Record<string, unknown>): ActionFrame {
-    return new ActionFrame({
-      actionId:       data["action_id"]       as string,
-      params:         (data["params"]          as Record<string, unknown> | null) ?? undefined,
-      async_:         (data["async"]           as boolean | null) ?? undefined,
-      idempotencyKey: (data["idempotency_key"] as string  | null) ?? undefined,
-      timeoutMs:      (data["timeout_ms"]      as number  | null) ?? undefined,
-      callbackUrl:    (data["callback_url"]    as string  | null) ?? undefined,
-      priority:       (data["priority"]        as "low" | "normal" | "high" | null) ?? undefined,
-      requestId:      (data["request_id"]      as string  | null) ?? undefined,
-    });
-  }
-}
-
-// ── SubscribeFrame ────────────────────────────────────────────────────────────
-
-export interface SubscribeFrameOptions {
-  action:             "subscribe" | "unsubscribe" | "ping";
-  streamId:           string;
-  anchorRef?:         string;
-  filter?:            Record<string, unknown>;
-  heartbeatInterval?: number;
-  resumeFromSeq?:     bigint | number;
-  type?:              string;
-}
-
-export class SubscribeFrame implements NpsFrame {
-  readonly frameType     = FrameType.SUBSCRIBE;
-  readonly preferredTier = EncodingTier.MSGPACK;
-
-  readonly action:             "subscribe" | "unsubscribe" | "ping";
-  readonly streamId:           string;
-  readonly anchorRef?:         string;
-  readonly filter?:            Record<string, unknown>;
-  readonly heartbeatInterval?: number;
-  readonly resumeFromSeq?:     bigint;
-  readonly type?:              string;
-
-  constructor(opts: SubscribeFrameOptions) {
-    this.action            = opts.action;
-    this.streamId          = opts.streamId;
-    this.anchorRef         = opts.anchorRef;
-    this.filter            = opts.filter;
-    this.heartbeatInterval = opts.heartbeatInterval;
-    this.resumeFromSeq     = opts.resumeFromSeq !== undefined
-      ? BigInt(opts.resumeFromSeq)
-      : undefined;
-    this.type = opts.type;
-  }
-
-  toDict(): Record<string, unknown> {
-    const d: Record<string, unknown> = {
-      frame:     0x12,
-      action:    this.action,
-      stream_id: this.streamId,
-    };
-    if (this.anchorRef         !== undefined) d["anchor_ref"]         = this.anchorRef;
-    if (this.filter            !== undefined) d["filter"]             = this.filter;
-    if (this.heartbeatInterval !== undefined) d["heartbeat_interval"] = this.heartbeatInterval;
-    if (this.resumeFromSeq     !== undefined) d["resume_from_seq"]    = this.resumeFromSeq;
-    if (this.type              !== undefined) d["type"]               = this.type;
-    return d;
-  }
-
-  static fromDict(data: Record<string, unknown>): SubscribeFrame {
-    const seq = data["resume_from_seq"];
-    return new SubscribeFrame({
-      action:            data["action"] as "subscribe" | "unsubscribe" | "ping",
-      streamId:          data["stream_id"] as string,
-      anchorRef:         (data["anchor_ref"]         as string  | null) ?? undefined,
-      filter:            (data["filter"]             as Record<string, unknown> | null) ?? undefined,
-      heartbeatInterval: (data["heartbeat_interval"] as number  | null) ?? undefined,
-      resumeFromSeq:     seq != null ? BigInt(seq as string | number | bigint) : undefined,
-      type:              (data["type"]               as string  | null) ?? undefined,
-    });
+    return new ActionFrame(
+      data["action_id"]       as string,
+      (data["params"]          as Record<string, unknown> | null) ?? undefined,
+      (data["async"]           as boolean | null) ?? undefined,
+      (data["idempotency_key"] as string  | null) ?? undefined,
+      (data["timeout_ms"]      as number  | null) ?? undefined,
+    );
   }
 }
 

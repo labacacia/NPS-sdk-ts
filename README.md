@@ -1,20 +1,15 @@
 English | [中文版](./README.cn.md)
 
 # @labacacia/nps-sdk — TypeScript / Node.js
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-v1.0.0--alpha.8-orange.svg)](CHANGELOG.md)
-[![NCP](https://img.shields.io/badge/NCP-v0.6-5b8cff.svg)]()
-[![NWP](https://img.shields.io/badge/NWP-v0.12-4af0b0.svg)]()
-[![NIP](https://img.shields.io/badge/NIP-v0.8-7b61ff.svg)]()
-[![NDP](https://img.shields.io/badge/NDP-v0.7-f0a050.svg)]()
-[![NOP](https://img.shields.io/badge/NOP-v0.5-ff8c42.svg)]()
 
 TypeScript SDK for the **Neural Protocol Suite** (NPS) — a protocol suite designed for AI Agents.  
 Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-source ecosystem.
 
 ## Status
 
-**v1.0.0-alpha.8 — track NPS suite alpha.8** · 5 protocols · 271 tests · ≥ 98% coverage
+**v1.0.0-alpha.11 — RFC-0002 cross-SDK port (third language)** · 5 protocols · 271 tests · ≥ 98% coverage
+
+> npm registry note: `@labacacia/nps-sdk@1.0.0-alpha.11` is deprecated because the published tarball omitted `dist/`. The `alpha` dist-tag currently resolves to `1.0.0-alpha.11`; use the GitHub `v1.0.0-alpha.11` tag for source until the next npm prerelease.
 
 | Protocol | Class | Status |
 |----------|-------|--------|

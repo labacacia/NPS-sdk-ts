@@ -2,7 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { QueryFrame, ActionFrame, SubscribeFrame, asyncActionResponseFromDict } from "../src/nwp/frames.js";
+import {
+  ActionFrame,
+  NWP_TOPOLOGY_SNAPSHOT,
+  QueryFrame,
+  asyncActionResponseFromDict,
+  type BridgeNodeSpec,
+  type TopologySnapshotRequest,
+} from "../src/nwp/frames.js";
 import { NwpClient } from "../src/nwp/client.js";
 import { createDefaultRegistry } from "../src/setup.js";
 import { NpsFrameCodec, EncodingTier } from "../src/core/index.js";
@@ -12,42 +19,24 @@ import { AnchorFrame, CapsFrame, StreamFrame } from "../src/ncp/frames.js";
 
 describe("QueryFrame", () => {
   it("round-trips via toDict / fromDict", () => {
-    const f = new QueryFrame({
-      anchorRef:    "sha256:" + "a".repeat(64),
-      filter:       { name: { $eq: "Alice" } },
-      limit:        10,
-      cursor:       "tok_abc",
-      order:        [{ field: "name", dir: "ASC" }],
-      fields:       ["id", "name"],
-      vectorSearch: { vector: [0.1, 0.2], top_k: 5, field: "embedding" },
-      depth:        2,
-    });
+    const f = new QueryFrame(
+      "sha256:" + "a".repeat(64),
+      { name: { $eq: "Alice" } },
+      10,
+      0,
+      [{ field: "name", dir: "asc" }],
+      ["id", "name"],
+      { vector: [0.1, 0.2], topK: 5 },
+      2,
+    );
     const back = QueryFrame.fromDict(f.toDict());
     expect(back.anchorRef).toBe(f.anchorRef);
     expect(back.limit).toBe(10);
-    expect(back.cursor).toBe("tok_abc");
-    expect(back.order?.[0]?.field).toBe("name");
+    expect(back.offset).toBe(0);
+    expect(back.orderBy?.[0]?.field).toBe("name");
     expect(back.fields?.[1]).toBe("name");
-    expect(back.vectorSearch?.top_k).toBe(5);
-    expect(back.vectorSearch?.field).toBe("embedding");
+    expect(back.vectorSearch?.topK).toBe(5);
     expect(back.depth).toBe(2);
-  });
-
-  it("round-trips optional fields: type, requestId, tokenBudget, stream", () => {
-    const f = new QueryFrame({
-      anchorRef:   "sha256:" + "c".repeat(64),
-      type:        "topology.snapshot",
-      requestId:   "550e8400-e29b-41d4-a716-446655440001",
-      tokenBudget: 800,
-      stream:      true,
-      autoAnchor:  false,
-    });
-    const back = QueryFrame.fromDict(f.toDict());
-    expect(back.type).toBe("topology.snapshot");
-    expect(back.requestId).toBe("550e8400-e29b-41d4-a716-446655440001");
-    expect(back.tokenBudget).toBe(800);
-    expect(back.stream).toBe(true);
-    expect(back.autoAnchor).toBe(false);
   });
 
   it("handles all-optional constructor (empty query)", () => {
@@ -56,19 +45,60 @@ describe("QueryFrame", () => {
     expect(back.anchorRef).toBeUndefined();
     expect(back.limit).toBeUndefined();
   });
+
+  it("round-trips alpha.11 query extensions", () => {
+    const f = QueryFrame.fromDict({
+      anchor_ref: "sha256:" + "c".repeat(64),
+      cursor: "next-page",
+      order: [{ field: "created_at", dir: "DESC" }],
+      vector_search: { field: "embedding", vector: [0.1, 0.2], top_k: 3, threshold: 0.7, metric: "cosine" },
+      auto_anchor: true,
+      stream: true,
+      aggregate: { count: "*" },
+      token_budget: 4096,
+      tokenizer: "cl100k_base",
+      request_id: "req-1",
+    });
+
+    expect(f.cursor).toBe("next-page");
+    expect(f.orderBy?.[0]?.dir).toBe("DESC");
+    expect(f.vectorSearch?.topK).toBe(3);
+    expect(f.vectorSearch?.vectorField).toBe("embedding");
+    expect(f.autoAnchor).toBe(true);
+    expect(f.tokenBudget).toBe(4096);
+  });
+});
+
+describe("NWP topology models", () => {
+  it("exposes snapshot and bridge model shapes", () => {
+    const req: TopologySnapshotRequest = {
+      kind: NWP_TOPOLOGY_SNAPSHOT,
+      anchorRef: "sha256:" + "d".repeat(64),
+      includeBridges: true,
+      maxDepth: 2,
+    };
+    const bridge: BridgeNodeSpec = {
+      bridgeId: "bridge-1",
+      sourceProtocol: "nwp",
+      targetProtocol: "ndp",
+    };
+
+    expect(req.kind).toBe("topology.snapshot");
+    expect(bridge.targetProtocol).toBe("ndp");
+  });
 });
 
 // ── ActionFrame ───────────────────────────────────────────────────────────────
 
 describe("ActionFrame", () => {
   it("round-trips via toDict / fromDict", () => {
-    const f = new ActionFrame({
-      actionId:       "search",
-      params:         { q: "test" },
-      async_:         true,
-      idempotencyKey: "idem-key-1",
-      timeoutMs:      5000,
-    });
+    const f = new ActionFrame(
+      "search",
+      { q: "test" },
+      true,
+      "idem-key-1",
+      5000,
+    );
     const back = ActionFrame.fromDict(f.toDict());
     expect(back.actionId).toBe("search");
     expect(back.params?.["q"]).toBe("test");
@@ -77,56 +107,10 @@ describe("ActionFrame", () => {
     expect(back.timeoutMs).toBe(5000);
   });
 
-  it("round-trips optional fields: callbackUrl, priority, requestId", () => {
-    const f = new ActionFrame({
-      actionId:    "order.create",
-      callbackUrl: "https://agent.example.com/cb",
-      priority:    "high",
-      requestId:   "550e8400-e29b-41d4-a716-446655440002",
-    });
-    const back = ActionFrame.fromDict(f.toDict());
-    expect(back.callbackUrl).toBe("https://agent.example.com/cb");
-    expect(back.priority).toBe("high");
-    expect(back.requestId).toBe("550e8400-e29b-41d4-a716-446655440002");
-  });
-
   it("defaults async to false when not provided", () => {
-    const f    = new ActionFrame({ actionId: "do-thing" });
+    const f    = new ActionFrame("do-thing");
     const back = ActionFrame.fromDict(f.toDict());
     expect(back.async_).toBeFalsy();
-  });
-});
-
-// ── SubscribeFrame ────────────────────────────────────────────────────────────
-
-describe("SubscribeFrame", () => {
-  it("round-trips subscribe action via toDict / fromDict", () => {
-    const f = new SubscribeFrame({
-      action:            "subscribe",
-      streamId:          "550e8400-e29b-41d4-a716-446655440003",
-      anchorRef:         "sha256:" + "d".repeat(64),
-      heartbeatInterval: 30,
-      resumeFromSeq:     42n,
-    });
-    const back = SubscribeFrame.fromDict(f.toDict());
-    expect(back.action).toBe("subscribe");
-    expect(back.streamId).toBe("550e8400-e29b-41d4-a716-446655440003");
-    expect(back.anchorRef).toBe(f.anchorRef);
-    expect(back.heartbeatInterval).toBe(30);
-    expect(back.resumeFromSeq).toBe(42n);
-  });
-
-  it("round-trips type field for reserved subscribe types", () => {
-    const f    = new SubscribeFrame({ action: "subscribe", streamId: "sid1", type: "topology.stream" });
-    const back = SubscribeFrame.fromDict(f.toDict());
-    expect(back.type).toBe("topology.stream");
-  });
-
-  it("round-trips unsubscribe action", () => {
-    const f    = new SubscribeFrame({ action: "unsubscribe", streamId: "sid2" });
-    const back = SubscribeFrame.fromDict(f.toDict());
-    expect(back.action).toBe("unsubscribe");
-    expect(back.resumeFromSeq).toBeUndefined();
   });
 });
 
@@ -156,18 +140,20 @@ describe("NwpClient", () => {
 
   beforeEach(() => { vi.restoreAllMocks(); });
 
-  it("trailing slash stripped from baseUrl", async () => {
-    const capsFrame = new CapsFrame(aid, 1, [{ id: 1 }]);
-    const wire      = codec.encode(capsFrame);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true, arrayBuffer: () => Promise.resolve(wire.buffer),
-    }));
-    const client = new NwpClient("http://node.test/");
-    await client.query(new QueryFrame({ anchorRef: aid }));
+  it("sendAnchor — POSTs and resolves on 200", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+    const client = new NwpClient("http://node.test");
+    await expect(client.sendAnchor(new AnchorFrame(aid, schema))).resolves.toBeUndefined();
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-      "http://node.test/query",
-      expect.anything(),
+      "http://node.test/anchor",
+      expect.objectContaining({ method: "POST" }),
     );
+  });
+
+  it("sendAnchor — throws on non-2xx", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503 }));
+    const client = new NwpClient("http://node.test");
+    await expect(client.sendAnchor(new AnchorFrame(aid, schema))).rejects.toThrow("503");
   });
 
   it("query — decodes CapsFrame response", async () => {
@@ -178,25 +164,9 @@ describe("NwpClient", () => {
       arrayBuffer: () => Promise.resolve(wire.buffer),
     }));
     const client = new NwpClient("http://node.test");
-    const result = await client.query(new QueryFrame({ anchorRef: aid }));
+    const result = await client.query(new QueryFrame(aid));
     expect(result).toBeInstanceOf(CapsFrame);
     expect(result.count).toBe(1);
-  });
-
-  it("query — sends application/nwp-frame Content-Type", async () => {
-    const capsFrame = new CapsFrame(aid, 0, []);
-    const wire      = codec.encode(capsFrame);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true, arrayBuffer: () => Promise.resolve(wire.buffer),
-    }));
-    const client = new NwpClient("http://node.test");
-    await client.query(new QueryFrame({ anchorRef: aid }));
-    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        headers: expect.objectContaining({ "Content-Type": "application/nwp-frame" }),
-      }),
-    );
   });
 
   it("query — throws when response is not CapsFrame", async () => {
@@ -207,25 +177,25 @@ describe("NwpClient", () => {
       arrayBuffer: () => Promise.resolve(wire.buffer),
     }));
     const client = new NwpClient("http://node.test");
-    await expect(client.query(new QueryFrame({ anchorRef: aid }))).rejects.toThrow(TypeError);
+    await expect(client.query(new QueryFrame(aid))).rejects.toThrow(TypeError);
   });
 
   it("query — throws on non-2xx", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
     const client = new NwpClient("http://node.test");
-    await expect(client.query(new QueryFrame({ anchorRef: aid }))).rejects.toThrow("404");
+    await expect(client.query(new QueryFrame(aid))).rejects.toThrow("404");
   });
 
-  it("invoke — sync NWP capsule response", async () => {
+  it("invoke — sync NPS frame response", async () => {
     const capsFrame = new CapsFrame(aid, 0, []);
     const wire      = codec.encode(capsFrame);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok:          true,
-      headers:     { get: () => "application/nwp-capsule" },
+      headers:     { get: () => "application/x-nps-frame" },
       arrayBuffer: () => Promise.resolve(wire.buffer),
     }));
     const client = new NwpClient("http://node.test");
-    const result = await client.invoke(new ActionFrame({ actionId: "list" }));
+    const result = await client.invoke(new ActionFrame("list"));
     expect(result).toBeInstanceOf(CapsFrame);
   });
 
@@ -235,9 +205,7 @@ describe("NwpClient", () => {
       json: () => Promise.resolve({ task_id: "t99", status: "queued" }),
     }));
     const client = new NwpClient("http://node.test");
-    const result = await client.invoke(
-      new ActionFrame({ actionId: "heavy", async_: true }),
-    ) as { taskId: string };
+    const result = await client.invoke(new ActionFrame("heavy", {}, true)) as { taskId: string };
     expect(result.taskId).toBe("t99");
   });
 
@@ -248,16 +216,14 @@ describe("NwpClient", () => {
       json:    () => Promise.resolve({ result: "ok" }),
     }));
     const client = new NwpClient("http://node.test");
-    const result = await client.invoke(
-      new ActionFrame({ actionId: "ping" }),
-    ) as { result: string };
+    const result = await client.invoke(new ActionFrame("ping")) as { result: string };
     expect(result.result).toBe("ok");
   });
 
   it("invoke — throws on non-2xx", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
     const client = new NwpClient("http://node.test");
-    await expect(client.invoke(new ActionFrame({ actionId: "ping" }))).rejects.toThrow("500");
+    await expect(client.invoke(new ActionFrame("ping"))).rejects.toThrow("500");
   });
 
   it("stream — yields StreamFrames and stops at isLast", async () => {
@@ -271,7 +237,7 @@ describe("NwpClient", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, body: mockBody() }));
     const client  = new NwpClient("http://node.test");
     const frames: StreamFrame[] = [];
-    for await (const f of client.stream(new QueryFrame({ anchorRef: aid }))) {
+    for await (const f of client.stream(new QueryFrame(aid))) {
       frames.push(f);
     }
     expect(frames).toHaveLength(2);
@@ -287,7 +253,7 @@ describe("NwpClient", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, body: mockBody() }));
     const client = new NwpClient("http://node.test");
     await expect(async () => {
-      for await (const _ of client.stream(new QueryFrame({ anchorRef: aid }))) { /* consume */ }
+      for await (const _ of client.stream(new QueryFrame(aid))) { /* consume */ }
     }).rejects.toThrow(TypeError);
   });
 
@@ -295,7 +261,7 @@ describe("NwpClient", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, body: null }));
     const client = new NwpClient("http://node.test");
     const frames: StreamFrame[] = [];
-    for await (const f of client.stream(new QueryFrame({ anchorRef: aid }))) frames.push(f);
+    for await (const f of client.stream(new QueryFrame(aid))) frames.push(f);
     expect(frames).toHaveLength(0);
   });
 
@@ -303,51 +269,16 @@ describe("NwpClient", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 400 }));
     const client = new NwpClient("http://node.test");
     await expect(async () => {
-      for await (const _ of client.stream(new QueryFrame({ anchorRef: aid }))) { /* consume */ }
+      for await (const _ of client.stream(new QueryFrame(aid))) { /* consume */ }
     }).rejects.toThrow("400");
   });
 
-  it("subscribe — returns CapsFrame ack", async () => {
-    const ackFrame = new CapsFrame("nps:system:subscribe:ack", 1, [{ stream_id: "sid1", status: "subscribed" }]);
-    const wire     = codec.encode(ackFrame);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true, arrayBuffer: () => Promise.resolve(wire.buffer),
-    }));
-    const client = new NwpClient("http://node.test");
-    const result = await client.subscribe(
-      new SubscribeFrame({ action: "subscribe", streamId: "sid1", anchorRef: aid }),
-    );
-    expect(result).toBeInstanceOf(CapsFrame);
+  it("trailing slash stripped from baseUrl", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+    const client = new NwpClient("http://node.test/");
+    await client.sendAnchor(new AnchorFrame(aid, schema));
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-      "http://node.test/subscribe",
-      expect.objectContaining({ method: "POST" }),
-    );
-  });
-
-  it("fetchManifest — parses JSON from /.nwm", async () => {
-    const manifest = { nwp: "0.2", node_id: "urn:nps:node:test:node1", node_type: "memory" };
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true, json: () => Promise.resolve(manifest),
-    }));
-    const client = new NwpClient("http://node.test");
-    const result = await client.fetchManifest();
-    expect(result.nwp).toBe("0.2");
-    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-      "http://node.test/.nwm",
-      expect.objectContaining({ headers: expect.objectContaining({ Accept: "application/nwp-manifest+json" }) }),
-    );
-  });
-
-  it("listActions — returns JSON from /actions", async () => {
-    const actions = [{ action_id: "search" }];
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true, json: () => Promise.resolve(actions),
-    }));
-    const client = new NwpClient("http://node.test");
-    const result = await client.listActions();
-    expect(result).toEqual(actions);
-    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-      "http://node.test/actions",
+      "http://node.test/anchor",
       expect.anything(),
     );
   });

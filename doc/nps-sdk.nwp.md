@@ -2,7 +2,7 @@ English | [中文版](./nps-sdk.nwp.cn.md)
 
 # `@labacacia/nps-sdk/nwp` — Class and Method Reference
 
-> Spec: [NPS-2 NWP v0.4](https://github.com/labacacia/nps/blob/main/spec/NPS-2-NWP.md)
+> Spec: [NPS-2 NWP v0.13](https://github.com/labacacia/nps/blob/main/spec/NPS-2-NWP.md)
 
 NWP is the HTTP-of-AI. This module ships the two NWP frames
 (`QueryFrame`, `ActionFrame`), the async `NwpClient`, and supporting
