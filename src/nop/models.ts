@@ -10,6 +10,8 @@ export enum TaskState {
   FAILED        = "failed",
   CANCELLED     = "cancelled",
   SKIPPED       = "skipped",
+  COMPENSATING  = "compensating",
+  COMPENSATED   = "compensated",
 }
 
 export enum TaskPriority {
@@ -25,10 +27,12 @@ export enum BackoffStrategy {
 }
 
 export enum AggregateStrategy {
-  MERGE      = "merge",
-  FIRST      = "first",
-  FASTEST_K  = "fastest_k",
-  ALL        = "all",
+  MERGE            = "merge",
+  FIRST            = "first",
+  FASTEST_K        = "fastest_k",
+  ALL              = "all",
+  WEIGHTED_FIRST_K = "weighted_first_k",
+  MERGE_ALL        = "merge_all",
 }
 
 export interface RetryPolicy {
@@ -56,16 +60,24 @@ export interface TaskContext {
   traceId?:       string;
 }
 
+export const CompensationPolicy = {
+  NONE:       'none',
+  ON_FAILURE: 'on_failure',
+  ALWAYS:     'always',
+} as const;
+
 export interface DagNode {
   id:             string;
   action:         string;
   agent:          string;
   inputFrom?:     readonly string[];
   inputMapping?:  Record<string, string>;
-  timeoutMs?:     number;
-  retryPolicy?:   RetryPolicy;
-  condition?:     string;
-  minRequired?:   number;
+  timeoutMs?:                  number;
+  retryPolicy?:                RetryPolicy;
+  condition?:                  string;
+  minRequired?:                number;
+  compensate_action?:          string;
+  compensate_params_mapping?:  Record<string, unknown>;
 }
 
 export interface DagEdge {

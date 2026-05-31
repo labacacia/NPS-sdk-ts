@@ -12,36 +12,39 @@ export class TaskFrame implements NpsFrame {
   readonly preferredTier = EncodingTier.MSGPACK;
 
   constructor(
-    public readonly taskId:       string,
-    public readonly dag:          TaskDag,
-    public readonly timeoutMs?:   number,
-    public readonly callbackUrl?: string,
-    public readonly context?:     TaskContext,
-    public readonly priority?:    TaskPriority,
-    public readonly depth?:       number,
+    public readonly taskId:               string,
+    public readonly dag:                  TaskDag,
+    public readonly timeoutMs?:           number,
+    public readonly callbackUrl?:         string,
+    public readonly context?:             TaskContext,
+    public readonly priority?:            TaskPriority,
+    public readonly depth?:               number,
+    public readonly compensationPolicy?:  string,
   ) {}
 
   toDict(): Record<string, unknown> {
     return {
-      task_id:      this.taskId,
-      dag:          this.dag,
-      timeout_ms:   this.timeoutMs   ?? null,
-      callback_url: this.callbackUrl ?? null,
-      context:      this.context     ?? null,
-      priority:     this.priority    ?? null,
-      depth:        this.depth       ?? null,
+      task_id:             this.taskId,
+      dag:                 this.dag,
+      timeout_ms:          this.timeoutMs          ?? null,
+      callback_url:        this.callbackUrl         ?? null,
+      context:             this.context             ?? null,
+      priority:            this.priority            ?? null,
+      depth:               this.depth               ?? null,
+      compensation_policy: this.compensationPolicy  ?? 'none',
     };
   }
 
   static fromDict(data: Record<string, unknown>): TaskFrame {
     return new TaskFrame(
-      data["task_id"]      as string,
-      data["dag"]          as TaskDag,
-      (data["timeout_ms"]   as number | null) ?? undefined,
-      (data["callback_url"] as string | null) ?? undefined,
-      (data["context"]      as TaskContext | null) ?? undefined,
-      (data["priority"]     as TaskPriority | null) ?? undefined,
-      (data["depth"]        as number | null) ?? undefined,
+      data["task_id"]             as string,
+      data["dag"]                 as TaskDag,
+      (data["timeout_ms"]          as number | null) ?? undefined,
+      (data["callback_url"]        as string | null) ?? undefined,
+      (data["context"]             as TaskContext | null) ?? undefined,
+      (data["priority"]            as TaskPriority | null) ?? undefined,
+      (data["depth"]               as number | null) ?? undefined,
+      (data["compensation_policy"] as string | null) ?? undefined,
     );
   }
 }
@@ -53,36 +56,39 @@ export class DelegateFrame implements NpsFrame {
   readonly preferredTier = EncodingTier.MSGPACK;
 
   constructor(
-    public readonly taskId:         string,
-    public readonly subtaskId:      string,
-    public readonly action:         string,
-    public readonly agentNid:       string,
-    public readonly inputs?:        Record<string, unknown>,
-    public readonly params?:        Record<string, unknown>,
-    public readonly idempotencyKey?: string,
+    public readonly taskId:                string,
+    public readonly subtaskId:             string,
+    public readonly action:                string,
+    public readonly agentNid:              string,
+    public readonly inputs?:               Record<string, unknown>,
+    public readonly params?:               Record<string, unknown>,
+    public readonly idempotencyKey?:       string,
+    public readonly targetClusterAnchor?:  string,
   ) {}
 
   toDict(): Record<string, unknown> {
     return {
-      task_id:         this.taskId,
-      subtask_id:      this.subtaskId,
-      action:          this.action,
-      agent_nid:       this.agentNid,
-      inputs:          this.inputs          ?? null,
-      params:          this.params          ?? null,
-      idempotency_key: this.idempotencyKey  ?? null,
+      task_id:               this.taskId,
+      subtask_id:            this.subtaskId,
+      action:                this.action,
+      agent_nid:             this.agentNid,
+      inputs:                this.inputs                ?? null,
+      params:                this.params                ?? null,
+      idempotency_key:       this.idempotencyKey        ?? null,
+      target_cluster_anchor: this.targetClusterAnchor   ?? null,
     };
   }
 
   static fromDict(data: Record<string, unknown>): DelegateFrame {
     return new DelegateFrame(
-      data["task_id"]         as string,
-      data["subtask_id"]      as string,
-      data["action"]          as string,
-      data["agent_nid"]       as string,
-      (data["inputs"]          as Record<string, unknown> | null) ?? undefined,
-      (data["params"]          as Record<string, unknown> | null) ?? undefined,
-      (data["idempotency_key"] as string | null) ?? undefined,
+      data["task_id"]               as string,
+      data["subtask_id"]            as string,
+      data["action"]                as string,
+      data["agent_nid"]             as string,
+      (data["inputs"]                as Record<string, unknown> | null) ?? undefined,
+      (data["params"]                as Record<string, unknown> | null) ?? undefined,
+      (data["idempotency_key"]       as string | null) ?? undefined,
+      (data["target_cluster_anchor"] as string | null) ?? undefined,
     );
   }
 }
@@ -139,15 +145,17 @@ export class AlignStreamFrame implements NpsFrame {
   readonly preferredTier = EncodingTier.MSGPACK;
 
   constructor(
-    public readonly streamId:   string,
-    public readonly taskId:     string,
-    public readonly subtaskId:  string,
-    public readonly seq:        number,
-    public readonly isFinal:    boolean,
-    public readonly senderNid:  string,
-    public readonly data?:      Record<string, unknown>,
-    public readonly error?:     StreamError,
+    public readonly streamId:    string,
+    public readonly taskId:      string,
+    public readonly subtaskId:   string,
+    public readonly seq:         number,
+    public readonly isFinal:     boolean,
+    public readonly senderNid:   string,
+    public readonly data?:       Record<string, unknown>,
+    public readonly error?:      StreamError,
     public readonly windowSize?: number,
+    public readonly ackSeq?:     number,
+    public readonly nakSeq?:     number,
   ) {}
 
   toDict(): Record<string, unknown> {
@@ -161,6 +169,8 @@ export class AlignStreamFrame implements NpsFrame {
       data:        this.data        ?? null,
       error:       this.error ? { error_code: this.error.errorCode, message: this.error.message ?? null } : null,
       window_size: this.windowSize  ?? null,
+      ack_seq:     this.ackSeq      ?? null,
+      nak_seq:     this.nakSeq      ?? null,
     };
   }
 
@@ -176,6 +186,8 @@ export class AlignStreamFrame implements NpsFrame {
       (data["data"]        as Record<string, unknown> | null) ?? undefined,
       rawError ? { errorCode: rawError.error_code, ...(rawError.message != null ? { message: rawError.message } : {}) } : undefined,
       (data["window_size"] as number | null) ?? undefined,
+      (data["ack_seq"]     as number | null) ?? undefined,
+      (data["nak_seq"]     as number | null) ?? undefined,
     );
   }
 }

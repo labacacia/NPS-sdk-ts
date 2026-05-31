@@ -76,13 +76,15 @@ describe("ResolveFrame", () => {
 
 describe("GraphFrame", () => {
   it("toDict / fromDict with nodes", () => {
-    const nodes = [{ nid: NID, addresses: ADDRS, capabilities: CAPS }];
-    const f     = new GraphFrame(1, true, nodes);
+    const nodes = [{ nid: NID, cluster_anchor: "anchor-1", node_roles: ["worker"] }];
+    const edges = [{ from_nid: NID, to_nid: "urn:nps:node:other.com:data", latency_ms: 5 }];
+    const f     = new GraphFrame("graph-1", nodes, edges, 300, { region: "us-west" });
     const back  = GraphFrame.fromDict(f.toDict());
-    expect(back.seq).toBe(1);
-    expect(back.initialSync).toBe(true);
-    expect(back.nodes?.[0]?.nid).toBe(NID);
-    expect(back.patch).toBeUndefined();
+    expect(back.graph_id).toBe("graph-1");
+    expect(back.nodes[0]?.nid).toBe(NID);
+    expect(back.edges[0]?.from_nid).toBe(NID);
+    expect(back.ttl).toBe(300);
+    expect(back.metadata?.["region"]).toBe("us-west");
   });
 });
 

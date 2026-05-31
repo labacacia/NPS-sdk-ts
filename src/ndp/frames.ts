@@ -11,10 +11,16 @@ export interface NdpAddress {
 }
 
 export interface NdpGraphNode {
-  nid:          string;
-  addresses:    readonly NdpAddress[];
-  capabilities: readonly string[];
-  nodeType?:    string;
+  nid:            string;
+  cluster_anchor?: string;
+  node_roles?:    string[];
+}
+
+export interface NdpGraphEdge {
+  from_nid:    string;
+  to_nid:      string;
+  latency_ms?: number;
+  protocol?:   string;
 }
 
 export interface NdpResolveResult {
@@ -111,32 +117,43 @@ export class ResolveFrame implements NpsFrame {
   }
 }
 
+export interface GraphFrameData {
+  graph_id:  string;
+  nodes:     NdpGraphNode[];
+  edges:     NdpGraphEdge[];
+  ttl:       number;
+  metadata?: Record<string, unknown>;
+}
+
 export class GraphFrame implements NpsFrame {
   readonly frameType     = FrameType.GRAPH;
   readonly preferredTier = EncodingTier.MSGPACK;
 
   constructor(
-    public readonly seq:         number,
-    public readonly initialSync: boolean,
-    public readonly nodes?:      readonly NdpGraphNode[],
-    public readonly patch?:      readonly Record<string, unknown>[],
+    public readonly graph_id:  string,
+    public readonly nodes:     readonly NdpGraphNode[],
+    public readonly edges:     readonly NdpGraphEdge[],
+    public readonly ttl:       number,
+    public readonly metadata?: Record<string, unknown>,
   ) {}
 
   toDict(): Record<string, unknown> {
     return {
-      seq:          this.seq,
-      initial_sync: this.initialSync,
-      nodes:        this.nodes ?? null,
-      patch:        this.patch ?? null,
+      graph_id:  this.graph_id,
+      nodes:     this.nodes,
+      edges:     this.edges,
+      ttl:       this.ttl,
+      metadata:  this.metadata ?? null,
     };
   }
 
   static fromDict(data: Record<string, unknown>): GraphFrame {
     return new GraphFrame(
-      data["seq"]          as number,
-      data["initial_sync"] as boolean,
-      (data["nodes"] as NdpGraphNode[] | null) ?? undefined,
-      (data["patch"] as Record<string, unknown>[] | null) ?? undefined,
+      data["graph_id"] as string,
+      (data["nodes"]   as NdpGraphNode[]) ?? [],
+      (data["edges"]   as NdpGraphEdge[]) ?? [],
+      data["ttl"]      as number,
+      (data["metadata"] as Record<string, unknown> | null) ?? undefined,
     );
   }
 }

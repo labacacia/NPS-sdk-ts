@@ -5,18 +5,25 @@ import { EncodingTier, FrameType } from "../core/frames.js";
 import type { NpsFrame } from "../core/codec.js";
 import { AssuranceLevel } from "./assurance-level.js";
 
+export interface IdentReputationPolicyHint {
+  log_sources?: string[];
+  consent?:     boolean;
+}
+
 export interface IdentMetadata {
-  issuer:       string;
-  issuedAt:     string;
-  expiresAt?:   string;
-  capabilities?: readonly string[];
-  scopes?:       readonly string[];
+  issuer:             string;
+  issuedAt:           string;
+  expiresAt?:         string;
+  capabilities?:      readonly string[];
+  scopes?:            readonly string[];
+  reputation_policy?: IdentReputationPolicyHint;
 }
 
 export interface IdentFrameOptions {
   assuranceLevel?: AssuranceLevel | null;   // RFC-0003
   certFormat?:     string | null;            // RFC-0002 — null treated as "v1-proprietary"
   certChain?:      readonly string[] | null; // RFC-0002 — base64url(DER), [leaf, intermediates..., root]
+  ocspStaple?:     string | null;            // alpha.11 — DER-encoded OCSP response, base64url
 }
 
 export class IdentFrame implements NpsFrame {
@@ -26,6 +33,7 @@ export class IdentFrame implements NpsFrame {
   readonly assuranceLevel: AssuranceLevel | null;
   readonly certFormat:     string | null;
   readonly certChain:      readonly string[] | null;
+  readonly ocsp_staple:    string | null;
 
   constructor(
     public readonly nid:       string,
@@ -37,6 +45,7 @@ export class IdentFrame implements NpsFrame {
     this.assuranceLevel = options.assuranceLevel ?? null;
     this.certFormat     = options.certFormat     ?? null;
     this.certChain      = options.certChain      ?? null;
+    this.ocsp_staple    = options.ocspStaple     ?? null;
   }
 
   unsignedDict(): Record<string, unknown> {
@@ -46,15 +55,16 @@ export class IdentFrame implements NpsFrame {
       metadata: this.metadata,
     };
     if (this.assuranceLevel !== null) out["assurance_level"] = this.assuranceLevel.wire;
-    // cert_format / cert_chain deliberately excluded from the signed payload —
+    // cert_format / cert_chain / ocsp_staple deliberately excluded from the signed payload —
     // the v1 Ed25519 signature covers only (nid, pub_key, metadata, [assurance_level]).
     return out;
   }
 
   toDict(): Record<string, unknown> {
     const out: Record<string, unknown> = { ...this.unsignedDict(), signature: this.signature };
-    if (this.certFormat !== null) out["cert_format"] = this.certFormat;
-    if (this.certChain  !== null) out["cert_chain"]  = [...this.certChain];
+    if (this.certFormat  !== null) out["cert_format"]  = this.certFormat;
+    if (this.certChain   !== null) out["cert_chain"]   = [...this.certChain];
+    if (this.ocsp_staple !== null) out["ocsp_staple"]  = this.ocsp_staple;
     return out;
   }
 
@@ -70,8 +80,9 @@ export class IdentFrame implements NpsFrame {
       data["signature"] as string,
       {
         assuranceLevel,
-        certFormat: (data["cert_format"] as string | undefined) ?? null,
+        certFormat:  (data["cert_format"] as string | undefined) ?? null,
         certChain,
+        ocspStaple:  (data["ocsp_staple"] as string | undefined) ?? null,
       },
     );
   }
