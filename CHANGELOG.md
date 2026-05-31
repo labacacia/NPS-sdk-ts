@@ -8,6 +8,50 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
 
 ---
 
+## [1.0.0-alpha.11] — 2026-05-31
+
+### Added
+
+- **NWP — `SubscribeFrame` CR-0006** (Breaking rewrite): Changed from class to interface; wire format updated — `subscriptionId` (UUID v4), `filter` (`Record<string,unknown>?`), `heartbeatIntervalMs` (`number?`), `maxEvents` (`number?`), `cursor` (`string?`). `subscribeFrameToNpsFrame()` / `subscribeFrameFromDict()` standalone helpers. **Wire breaking change vs alpha.8–10.**
+- **NOP — AlignStream ack/NAK**: `AlignStreamFrame` gains `ackSeq` and `nakSeq` (`number?`) for NOP v0.6 sliding-window acknowledgement.
+- **NOP — Saga compensation**: `TaskFrame.compensationPolicy`; `DelegateFrame.targetClusterAnchor`; `AggregateStrategy.WEIGHTED_FIRST_K` / `MERGE_ALL`.
+- **NDP — `GraphFrame` §5** (Breaking rewrite): `NdpGraphNode`, `NdpGraphEdge` interfaces; `GraphFrame` with `graphId`, `nodes`, `edges`, `ttl`, `metadata`. Max 256 nodes / 1024 edges.
+- **NDP — `SecurityProfile`**: `LOCAL_DEV` / `ORG_PRIVATE` / `PUBLIC_FEDERATED` const.
+- **NIP — `IdentFrame.ocspStaple`**: base64url DER OCSP response field; `IdentReputationPolicyHint` interface.
+
+### Tracking the suite
+
+This release tracks NPS suite `v1.0.0-alpha.11`. NCP v0.7 / NWP v0.13 / NIP v0.9 / NDP v0.8 / NOP v0.6.
+
+---
+
+## [1.0.0-alpha.10] — 2026-05-28
+
+### Added
+
+- **NOP — Saga compensation**: `DagNode` interface with `compensateAction` / `compensateParamsMapping`; `TaskState.COMPENSATING` / `COMPENSATED`; `CompensationPolicy` object.
+- **NDP — `SecurityProfile`**: `LOCAL_DEV` / `ORG_PRIVATE` / `PUBLIC_FEDERATED` const.
+- **NIP — `IdentReputationPolicyHint`**: Reputation policy hint interface; `IdentMetadata` interface.
+
+### Tracking the suite
+
+This release tracks NPS suite `v1.0.0-alpha.10`.
+
+---
+
+## [1.0.0-alpha.9] — 2026-05-28
+
+### Added
+
+- **NWP — `SubscribeFrame` (0x12)**: Initial `SubscribeFrame` class (pre-CR-0006 format — replaced in alpha.11).
+- **NWP — `ReputationPolicy` / `RepOutcome`**: RFC-0005 reputation types.
+
+### Tracking the suite
+
+This release tracks NPS suite `v1.0.0-alpha.9`.
+
+---
+
 ## [1.0.0-alpha.8] — 2026-05-28
 
 ### Tracking the suite
