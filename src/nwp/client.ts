@@ -12,7 +12,7 @@ import { registerNcpFrames } from "../ncp/registry.js";
 import { CapsFrame } from "../ncp/frames.js";
 import type { AnchorFrame, StreamFrame } from "../ncp/frames.js";
 import { registerNwpFrames } from "./registry.js";
-import { ActionFrame, SubscribeFrame, asyncActionResponseFromDict } from "./frames.js";
+import { ActionFrame, SubscribeFrame, subscribeFrameToNpsFrame, asyncActionResponseFromDict } from "./frames.js";
 import type { QueryFrame, AsyncActionResponse } from "./frames.js";
 import type { NeuralWebManifest } from "../nwp/manifest.js";
 
@@ -152,7 +152,7 @@ export class NwpClient {
   // ── Subscribe ──────────────────────────────────────────────────────────────
 
   async subscribe(frame: SubscribeFrame): Promise<CapsFrame> {
-    const wire = this._codec.encode(frame, { overrideTier: this._tier });
+    const wire = this._codec.encode(subscribeFrameToNpsFrame(frame), { overrideTier: this._tier });
     const res  = await fetch(`${this._baseUrl}/subscribe`, {
       method:  "POST",
       body:    wire as BodyInit,

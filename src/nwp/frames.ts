@@ -197,45 +197,37 @@ export class ActionFrame implements NpsFrame {
   }
 }
 
-// ── SubscribeFrame ───────────────────────────────────────────────────────────
+// ── SubscribeFrame ────────────────────────────────────────────────────────────
 
-export class SubscribeFrame implements NpsFrame {
-  readonly frameType     = FrameType.SUBSCRIBE;
-  readonly preferredTier = EncodingTier.MSGPACK;
+export interface SubscribeFrame {
+  subscription_id:        string;
+  filter?:                Record<string, unknown>;
+  heartbeat_interval_ms?: number;
+  max_events?:            number;
+  cursor?:                string;
+}
 
-  constructor(
-    public readonly action:            string,
-    public readonly streamId:          string,
-    public readonly anchorRef?:        string,
-    public readonly filter?:           Record<string, unknown>,
-    public readonly heartbeatInterval?: number,
-    public readonly resumeFromSeq?:    number,
-    public readonly type?:             string,
-  ) {}
+/** Wrap a SubscribeFrame into a codec-compatible NpsFrame for wire encoding. */
+export function subscribeFrameToNpsFrame(f: SubscribeFrame): NpsFrame {
+  const d: Record<string, unknown> = { subscription_id: f.subscription_id };
+  if (f.filter                != null) d["filter"]                = f.filter;
+  if (f.heartbeat_interval_ms != null) d["heartbeat_interval_ms"] = f.heartbeat_interval_ms;
+  if (f.max_events            != null) d["max_events"]            = f.max_events;
+  if (f.cursor                != null) d["cursor"]                = f.cursor;
+  return {
+    frameType:     FrameType.SUBSCRIBE,
+    preferredTier: EncodingTier.MSGPACK,
+    toDict():      Record<string, unknown> { return d; },
+  };
+}
 
-  toDict(): Record<string, unknown> {
-    return {
-      action:             this.action,
-      stream_id:          this.streamId,
-      anchor_ref:         this.anchorRef         ?? null,
-      filter:             this.filter            ?? null,
-      heartbeat_interval: this.heartbeatInterval ?? null,
-      resume_from_seq:    this.resumeFromSeq     ?? null,
-      type:               this.type              ?? null,
-    };
-  }
-
-  static fromDict(data: Record<string, unknown>): SubscribeFrame {
-    return new SubscribeFrame(
-      data["action"]       as string,
-      data["stream_id"]    as string,
-      (data["anchor_ref"]  as string | null) ?? undefined,
-      (data["filter"]      as Record<string, unknown> | null) ?? undefined,
-      (data["heartbeat_interval"] as number | null) ?? undefined,
-      (data["resume_from_seq"]    as number | null) ?? undefined,
-      (data["type"]        as string | null) ?? undefined,
-    );
-  }
+export function subscribeFrameFromDict(data: Record<string, unknown>): SubscribeFrame {
+  const f: SubscribeFrame = { subscription_id: data["subscription_id"] as string };
+  if (data["filter"]                != null) f.filter                = data["filter"]                as Record<string, unknown>;
+  if (data["heartbeat_interval_ms"] != null) f.heartbeat_interval_ms = data["heartbeat_interval_ms"] as number;
+  if (data["max_events"]            != null) f.max_events            = data["max_events"]            as number;
+  if (data["cursor"]                != null) f.cursor                = data["cursor"]                as string;
+  return f;
 }
 
 // ── AsyncActionResponse ───────────────────────────────────────────────────────
