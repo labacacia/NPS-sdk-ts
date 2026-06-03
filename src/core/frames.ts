@@ -18,6 +18,7 @@ export enum FrameType {
   CAPS         = 0x04,
   ALIGN        = 0x05, // deprecated — use AlignStream (0x43)
   HELLO        = 0x06,
+  NOP          = 0x07, // NCP v0.8 keepalive/heartbeat
 
   // NWP  0x10–0x1F
   QUERY        = 0x10,

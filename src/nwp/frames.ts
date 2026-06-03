@@ -50,15 +50,6 @@ export interface TopologyMember {
   metadata?: Record<string, unknown>;
 }
 
-export interface TopologyEvent {
-  eventId: string;
-  eventType: string;
-  nodeId?: string;
-  anchorRef?: string;
-  timestamp?: string;
-  payload?: Record<string, unknown>;
-}
-
 export interface BridgeNodeSpec {
   bridgeId: string;
   sourceProtocol: string;

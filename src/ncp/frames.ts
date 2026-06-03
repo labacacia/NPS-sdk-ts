@@ -219,6 +219,7 @@ export class HelloFrame implements NpsFrame {
     public          extSupport:           boolean = false,
     public          maxConcurrentStreams: number = HelloFrame.DEFAULT_MAX_CONCURRENT_STREAMS,
     public          e2eEncAlgorithms?:    readonly string[],
+    public          pingIntervalMs:       number = 0,
   ) {}
 
   toDict(): Record<string, unknown> {
@@ -232,6 +233,7 @@ export class HelloFrame implements NpsFrame {
       ext_support:            this.extSupport,
       max_concurrent_streams: this.maxConcurrentStreams,
       e2e_enc_algorithms:     this.e2eEncAlgorithms ? [...this.e2eEncAlgorithms] : null,
+      ping_interval_ms:       this.pingIntervalMs,
     };
   }
 
@@ -246,6 +248,24 @@ export class HelloFrame implements NpsFrame {
       (data["ext_support"]        as boolean | null) ?? false,
       (data["max_concurrent_streams"] as number | null) ?? HelloFrame.DEFAULT_MAX_CONCURRENT_STREAMS,
       (data["e2e_enc_algorithms"] as string[] | null) ?? undefined,
+      (data["ping_interval_ms"]   as number | null) ?? 0,
     );
+  }
+}
+
+// ── NopFrame (0x07) ───────────────────────────────────────────────────────────
+// NCP v0.8 §4.8 / §7.5 — Keepalive/heartbeat frame, no payload.
+// Either peer MAY send after handshake; receiver MUST accept and SHOULD reply.
+
+export class NopFrame implements NpsFrame {
+  readonly frameType     = FrameType.NOP;
+  readonly preferredTier = EncodingTier.JSON;
+
+  toDict(): Record<string, unknown> {
+    return {};
+  }
+
+  static fromDict(_data: Record<string, unknown>): NopFrame {
+    return new NopFrame();
   }
 }

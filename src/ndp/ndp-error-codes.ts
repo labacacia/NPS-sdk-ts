@@ -25,6 +25,8 @@ export const NDP_GRAPH_INVALID             = "NDP-GRAPH-INVALID" as const;
 export const NDP_GRAPH_TOO_LARGE           = "NDP-GRAPH-TOO-LARGE" as const;
 /** Federation resolution resulted in a routing loop */
 export const NDP_FEDERATION_LOOP           = "NDP-FEDERATION-LOOP" as const;
+/** Announce not received within heartbeat_interval_ms × 3 dead-peer threshold (v0.9) */
+export const NDP_ANNOUNCE_STALE            = "NDP-ANNOUNCE-STALE" as const;
 
 /** Maps each NDP error code to its NPS status code. */
 export const NDP_ERROR_TO_NPS_STATUS: Record<string, string> = {
@@ -44,4 +46,5 @@ export const NDP_ERROR_TO_NPS_STATUS: Record<string, string> = {
   "NDP-GRAPH-INVALID":              "NPS-CLIENT-BAD-FRAME",
   "NDP-GRAPH-TOO-LARGE":            "NPS-LIMIT-PAYLOAD",
   "NDP-FEDERATION-LOOP":            "NPS-CLIENT-CONFLICT",
+  "NDP-ANNOUNCE-STALE":             "NPS-CLIENT-NOT-FOUND",
 };

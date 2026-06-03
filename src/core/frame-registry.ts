@@ -68,6 +68,7 @@ export class FrameRegistry {
       .add(FrameType.Caps, "CapsFrame", "ncp")
       .add(FrameType.Align, "AlignFrame", "ncp") // deprecated
       .add(FrameType.Hello, "HelloFrame", "ncp")
+      .add(FrameType.Nop, "NopFrame", "ncp")
       .add(FrameType.Error, "ErrorFrame", "system")
       .build();
   }

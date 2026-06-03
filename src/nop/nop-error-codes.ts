@@ -29,6 +29,10 @@ export const NOP_COMPENSATION_NOT_SUPPORTED  = "NOP-COMPENSATION-NOT-SUPPORTED" 
 export const NOP_STREAM_NAK                  = "NOP-STREAM-NAK" as const;
 /** Callback HMAC header missing on webhook delivery */
 export const NOP_CALLBACK_HMAC_MISSING       = "NOP-CALLBACK-HMAC-MISSING" as const;
+/** Task result requested after result_ttl_seconds elapsed (v0.7) */
+export const NOP_TASK_RESULT_EXPIRED         = "NOP-TASK-RESULT-EXPIRED" as const;
+/** NAK retransmission requested for a frame no longer in sender's buffer (v0.7) */
+export const NOP_STREAM_NAK_UNRESOLVABLE     = "NOP-STREAM-NAK-UNRESOLVABLE" as const;
 
 /** Maps each NOP error code to its NPS status code. */
 export const NOP_ERROR_TO_NPS_STATUS: Record<string, string> = {
@@ -54,4 +58,6 @@ export const NOP_ERROR_TO_NPS_STATUS: Record<string, string> = {
   "NOP-COMPENSATION-NOT-SUPPORTED": "NPS-CLIENT-UNPROCESSABLE",
   "NOP-STREAM-NAK":                 "NPS-STREAM-SEQ-GAP",
   "NOP-CALLBACK-HMAC-MISSING":      "NPS-AUTH-UNAUTHENTICATED",
+  "NOP-TASK-RESULT-EXPIRED":        "NPS-CLIENT-NOT-FOUND",
+  "NOP-STREAM-NAK-UNRESOLVABLE":    "NPS-STREAM-SEQ-GAP",
 };

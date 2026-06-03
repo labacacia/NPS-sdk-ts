@@ -24,6 +24,7 @@ export interface IdentFrameOptions {
   certFormat?:     string | null;            // RFC-0002 — null treated as "v1-proprietary"
   certChain?:      readonly string[] | null; // RFC-0002 — base64url(DER), [leaf, intermediates..., root]
   ocspStaple?:     string | null;            // alpha.11 — DER-encoded OCSP response, base64url
+  nodeRoles?:      readonly string[] | null; // alpha.12 NIP v0.10 — self-declared node-role tags
 }
 
 export class IdentFrame implements NpsFrame {
@@ -34,6 +35,7 @@ export class IdentFrame implements NpsFrame {
   readonly certFormat:     string | null;
   readonly certChain:      readonly string[] | null;
   readonly ocsp_staple:    string | null;
+  readonly nodeRoles:      readonly string[] | null;
 
   constructor(
     public readonly nid:       string,
@@ -46,6 +48,7 @@ export class IdentFrame implements NpsFrame {
     this.certFormat     = options.certFormat     ?? null;
     this.certChain      = options.certChain      ?? null;
     this.ocsp_staple    = options.ocspStaple     ?? null;
+    this.nodeRoles      = options.nodeRoles      ?? null;
   }
 
   unsignedDict(): Record<string, unknown> {
@@ -65,6 +68,7 @@ export class IdentFrame implements NpsFrame {
     if (this.certFormat  !== null) out["cert_format"]  = this.certFormat;
     if (this.certChain   !== null) out["cert_chain"]   = [...this.certChain];
     if (this.ocsp_staple !== null) out["ocsp_staple"]  = this.ocsp_staple;
+    if (this.nodeRoles   !== null) out["node_roles"]   = [...this.nodeRoles!];
     return out;
   }
 
@@ -83,6 +87,7 @@ export class IdentFrame implements NpsFrame {
         certFormat:  (data["cert_format"] as string | undefined) ?? null,
         certChain,
         ocspStaple:  (data["ocsp_staple"] as string | undefined) ?? null,
+        nodeRoles:   Array.isArray(data["node_roles"]) ? (data["node_roles"] as string[]) : null,
       },
     );
   }

@@ -44,10 +44,11 @@ export class AnnounceFrame implements NpsFrame {
     public readonly nodeType?:            string,
     public readonly node_roles?:          string[],
     public readonly cluster_anchor?:      string,
-    public readonly spawn_spec_ref?:      string,
+    public readonly spawn_spec_ref?:      Record<string, unknown>, // NDP v0.9 §3.1.1 schema
     public readonly bridge_protocols?:    string[],
     public readonly activation_mode?:     string,
     public readonly activation_endpoint?: string,
+    public readonly heartbeat_interval_ms: number = 60_000, // NDP v0.9 §3.1
   ) {}
 
   unsignedDict(): Record<string, unknown> {
@@ -62,8 +63,9 @@ export class AnnounceFrame implements NpsFrame {
       cluster_anchor:       this.cluster_anchor       ?? null,
       spawn_spec_ref:       this.spawn_spec_ref       ?? null,
       bridge_protocols:     this.bridge_protocols     ?? null,
-      activation_mode:      this.activation_mode      ?? null,
-      activation_endpoint:  this.activation_endpoint  ?? null,
+      activation_mode:       this.activation_mode        ?? null,
+      activation_endpoint:   this.activation_endpoint    ?? null,
+      heartbeat_interval_ms: this.heartbeat_interval_ms,
     };
   }
 
@@ -82,10 +84,11 @@ export class AnnounceFrame implements NpsFrame {
       (data["node_type"]            as string | null) ?? undefined,
       ((data["node_roles"] ?? data["node_kind"]) as string[] | null) ?? undefined,
       (data["cluster_anchor"]       as string | null) ?? undefined,
-      (data["spawn_spec_ref"]       as string | null) ?? undefined,
-      (data["bridge_protocols"]     as string[] | null) ?? undefined,
-      (data["activation_mode"]      as string | null) ?? undefined,
-      (data["activation_endpoint"]  as string | null) ?? undefined,
+      (data["spawn_spec_ref"]         as Record<string, unknown> | null) ?? undefined,
+      (data["bridge_protocols"]       as string[] | null) ?? undefined,
+      (data["activation_mode"]        as string | null) ?? undefined,
+      (data["activation_endpoint"]    as string | null) ?? undefined,
+      (data["heartbeat_interval_ms"]  as number | null) ?? 60_000,
     );
   }
 }

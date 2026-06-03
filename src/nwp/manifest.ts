@@ -26,7 +26,14 @@ export interface NeuralWebManifest {
   graph?:            NodeGraph;
   min_assurance_level?: string;
   token_budget?:     NwmTokenBudget;
+  /** NWP v0.14 — uint32 monotonic counter incremented on every manifest change. */
+  manifest_version?:    number;
+  /** NWP v0.14 — ISO 8601 timestamp of last manifest update. */
+  manifest_updated_at?: string;
 }
+
+/** HTTP header name for the NWP manifest version (NWP v0.14). */
+export const X_NWM_VERSION = "X-NWM-Version" as const;
 
 /** Capability flags advertised in the NWM (NPS-2 §4.2). */
 export interface NodeCapabilities {

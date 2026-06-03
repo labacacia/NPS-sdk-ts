@@ -20,6 +20,7 @@ export class TaskFrame implements NpsFrame {
     public readonly priority?:            TaskPriority,
     public readonly depth?:               number,
     public readonly compensationPolicy?:  string,
+    public readonly resultTtlSeconds:     number = 3600, // NOP v0.7
   ) {}
 
   toDict(): Record<string, unknown> {
@@ -32,6 +33,7 @@ export class TaskFrame implements NpsFrame {
       priority:            this.priority            ?? null,
       depth:               this.depth               ?? null,
       compensation_policy: this.compensationPolicy  ?? 'none',
+      result_ttl_seconds:  this.resultTtlSeconds,
     };
   }
 
@@ -45,6 +47,7 @@ export class TaskFrame implements NpsFrame {
       (data["priority"]            as TaskPriority | null) ?? undefined,
       (data["depth"]               as number | null) ?? undefined,
       (data["compensation_policy"] as string | null) ?? undefined,
+      (data["result_ttl_seconds"]  as number | null) ?? 3600,
     );
   }
 }

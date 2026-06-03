@@ -61,6 +61,9 @@ export const CERT_PARENT_REVOKED      = "NIP-CERT-PARENT-REVOKED" as const;
 // ── OCSP staple (referenced in task) ────────────────────────────────────────
 export const OCSP_STAPLE_EXPIRED      = "NIP-OCSP-STAPLE-EXPIRED" as const;
 
+// ── NIP v0.10 — node_roles ───────────────────────────────────────────────────
+export const CERT_NODE_ROLES_MISMATCH = "NIP-CERT-NODE-ROLES-MISMATCH" as const;
+
 /** Maps each NIP error code to its NPS status code. */
 export const NIP_ERROR_TO_NPS_STATUS: Record<string, string> = {
   "NIP-CERT-EXPIRED":                      "NPS-AUTH-UNAUTHENTICATED",
@@ -102,4 +105,5 @@ export const NIP_ERROR_TO_NPS_STATUS: Record<string, string> = {
   "NIP-CA-JWS-EXPIRED":                    "NPS-AUTH-UNAUTHENTICATED",
   "NIP-CERT-PARENT-REVOKED":               "NPS-AUTH-UNAUTHENTICATED",
   "NIP-OCSP-STAPLE-EXPIRED":               "NPS-AUTH-UNAUTHENTICATED",
+  "NIP-CERT-NODE-ROLES-MISMATCH":          "NPS-AUTH-FORBIDDEN",
 };
