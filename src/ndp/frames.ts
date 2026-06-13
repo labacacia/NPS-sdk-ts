@@ -49,6 +49,10 @@ export class AnnounceFrame implements NpsFrame {
     public readonly activation_mode?:     string,
     public readonly activation_endpoint?: string,
     public readonly heartbeat_interval_ms: number = 60_000, // NDP v0.9 §3.1
+    // NDP v0.9 liveness — wire-only, EXCLUDED from the signed canonical form
+    // (last_seen updates every heartbeat → must not require re-signing; §3.2.1).
+    public readonly health?:              string, // "healthy" / "degraded" / "draining"
+    public readonly last_seen?:           string, // ISO 8601 UTC liveness beat
   ) {}
 
   unsignedDict(): Record<string, unknown> {
@@ -70,7 +74,11 @@ export class AnnounceFrame implements NpsFrame {
   }
 
   toDict(): Record<string, unknown> {
-    return { ...this.unsignedDict(), signature: this.signature };
+    const d: Record<string, unknown> = { ...this.unsignedDict(), signature: this.signature };
+    // Liveness fields live on the wire only (not in unsignedDict → not signed).
+    if (this.health !== undefined) d["health"] = this.health;
+    if (this.last_seen !== undefined) d["last_seen"] = this.last_seen;
+    return d;
   }
 
   static fromDict(data: Record<string, unknown>): AnnounceFrame {
@@ -89,6 +97,8 @@ export class AnnounceFrame implements NpsFrame {
       (data["activation_mode"]        as string | null) ?? undefined,
       (data["activation_endpoint"]    as string | null) ?? undefined,
       (data["heartbeat_interval_ms"]  as number | null) ?? 60_000,
+      (data["health"]                 as string | null) ?? undefined,
+      (data["last_seen"]              as string | null) ?? undefined,
     );
   }
 }

@@ -43,6 +43,26 @@ describe("AnnounceFrame", () => {
     expect(d["nid"]).toBe(NID);
   });
 
+  it("liveness fields (health/last_seen) are wire-only, excluded from signing", () => {
+    const base = makeAnnounce();
+    const f = new AnnounceFrame(
+      base.nid, base.addresses, base.capabilities, base.ttl, base.timestamp, base.signature,
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined, 60_000,
+      "draining", "2026-06-13T00:00:00Z",
+    );
+    const d = f.toDict();
+    expect(d["health"]).toBe("draining");
+    expect(d["last_seen"]).toBe("2026-06-13T00:00:00Z");
+    const u = f.unsignedDict();
+    expect(u["health"]).toBeUndefined();
+    expect(u["last_seen"]).toBeUndefined();
+    // Signs identically to the same frame without liveness fields.
+    expect(JSON.stringify(u)).toBe(JSON.stringify(base.unsignedDict()));
+    const back = AnnounceFrame.fromDict(d);
+    expect(back.health).toBe("draining");
+    expect(back.last_seen).toBe("2026-06-13T00:00:00Z");
+  });
+
   it("codec roundtrip (MsgPack)", () => {
     const registry = createFullRegistry();
     const codec    = new NpsFrameCodec(registry);
