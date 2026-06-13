@@ -7,7 +7,7 @@ Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-
 
 ## Status
 
-**v1.0.0-alpha.11 — RFC-0002 cross-SDK port (third language)** · 5 protocols · 271 tests · ≥ 98% coverage
+**v1.0.0-alpha.12 — RFC-0002 cross-SDK port (third language)** · 5 protocols · 271 tests · ≥ 98% coverage
 
 > npm registry note: `@labacacia/nps-sdk@1.0.0-alpha.11` is deprecated because the published tarball omitted `dist/`. The `alpha` dist-tag currently resolves to `1.0.0-alpha.11`; use the GitHub `v1.0.0-alpha.11` tag for source until the next npm prerelease.
 
