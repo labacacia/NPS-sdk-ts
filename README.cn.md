@@ -7,9 +7,9 @@
 
 ## 状态
 
-**v1.0.0-alpha.12 — RFC-0002 跨 SDK 端口波（第三棒）** · 5 个协议 · 271 个测试 · 覆盖率 ≥ 98%
+**v1.0.0-alpha.13 — RFC-0002 跨 SDK 端口波（第三棒）** · 5 个协议 · 271 个测试 · 覆盖率 ≥ 98%
 
-> npm registry 说明：`@labacacia/nps-sdk@1.0.0-alpha.11` 已 deprecated，因为发布到 npm 的 tarball 缺少 `dist/`。该问题已在 `1.0.0-alpha.12` 修复——请安装 `@labacacia/nps-sdk@alpha`（`alpha` dist-tag 现已指向 `1.0.0-alpha.12`）。
+> npm registry 说明：`@labacacia/nps-sdk@1.0.0-alpha.11` 已 deprecated，因为发布到 npm 的 tarball 缺少 `dist/`。该问题已在 `1.0.0-alpha.13` 修复——请安装 `@labacacia/nps-sdk@alpha`（`alpha` dist-tag 现已指向 `1.0.0-alpha.13`）。
 
 | 协议 | 类 | 状态 |
 |------|----|------|

@@ -24,7 +24,7 @@ export interface IdentFrameOptions {
   certFormat?:     string | null;            // RFC-0002 — null treated as "v1-proprietary"
   certChain?:      readonly string[] | null; // RFC-0002 — base64url(DER), [leaf, intermediates..., root]
   ocspStaple?:     string | null;            // alpha.11 — DER-encoded OCSP response, base64url
-  nodeRoles?:      readonly string[] | null; // alpha.12 NIP v0.10 — self-declared node-role tags
+  nodeRoles?:      readonly string[] | null; // alpha.13 NIP v0.10 — self-declared node-role tags
 }
 
 export class IdentFrame implements NpsFrame {
