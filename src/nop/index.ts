@@ -6,3 +6,5 @@ export * from "./frames.js";
 export * from "./registry.js";
 export * from "./client.js";
 export * from "./nop-error-codes.js";
+export * from "./dag-validator.js";
+export * from "./orchestrator.js";
