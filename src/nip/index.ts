@@ -10,6 +10,7 @@ export * from "./assurance-level.js";
 export * from "./cert-format.js";
 export * from "./error-codes.js";
 export * from "./verifier.js";
+export * from "./ca-client.js";
 export * as x509 from "./x509/index.js";
 export * as acme from "./acme/index.js";
 

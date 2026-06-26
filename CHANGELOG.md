@@ -8,197 +8,29 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
 
 ---
 
-## [1.0.0-alpha.13] — 2026-06-03
+## [1.0.0-alpha.14] — Unreleased
+
+### Added
+- `NipCaClient` under `@labacacia/nps-sdk/nip`: typed remote NIP CA client for discovery, CRL, agent/node registration, X.509 registration, renewal, revocation, and verification.
+- `NwpNativeNodeServer` under `@labacacia/nps-sdk/nwp`: native-mode NWP serving helper for dispatching QueryFrame/ActionFrame over an already established NCP stream.
+- `@labacacia/nps-sdk/conformance`: TC-N1/TC-N2 conformance catalog, manifest helper, and validator for CI/self-certification flows.
+
+---
+
+## [1.0.0-alpha.11] — 2026-05-28
 
 ### Added
 
-- **NCP v0.8 — `NopFrame` (0x07)**: New keepalive/heartbeat frame class; `HelloFrame.pingIntervalMs` (`number`, default `0`); `NCP_KEEPALIVE_TIMEOUT` / `NCP_REKEY_REQUIRED` error codes.
-- **NWP v0.14 — manifest versioning**: `manifest_version` changed to `uint32` monotonic counter; `manifest_updated_at` (ISO 8601); `X-NWM-Version` response header constant.
-- **NIP v0.10 — `node_roles`**: `IdentFrameOptions.nodeRoles` / `IdentFrame.nodeRoles` (`readonly string[] | null`); `CERT_NODE_ROLES_MISMATCH` error code.
-- **NDP v0.9 — spawn schema + heartbeat**: `AnnounceFrame.spawn_spec_ref` changed to structured `Record<string,unknown>` object (NdpSpawnSpecRef); `AnnounceFrame.heartbeat_interval_ms` (`number`, default `60000`); `NDP_ANNOUNCE_STALE` error code.
-- **NOP v0.7 — result TTL**: `TaskFrame.resultTtlSeconds` (`number`, default `3600`); `NOP_TASK_RESULT_EXPIRED` / `NOP_STREAM_NAK_UNRESOLVABLE` error codes.
-
-### Tracking the suite
-
-This release tracks NPS suite `v1.0.0-alpha.13`. NCP v0.8 / NWP v0.14 / NIP v0.10 / NDP v0.9 / NOP v0.7.
-
----
-
-## [1.0.0-alpha.11] — 2026-05-31
-
-### Added
-
-- **NWP — `SubscribeFrame` CR-0006** (Breaking rewrite): Changed from class to interface; wire format updated — `subscriptionId` (UUID v4), `filter` (`Record<string,unknown>?`), `heartbeatIntervalMs` (`number?`), `maxEvents` (`number?`), `cursor` (`string?`). `subscribeFrameToNpsFrame()` / `subscribeFrameFromDict()` standalone helpers. **Wire breaking change vs alpha.8–10.**
-- **NOP — AlignStream ack/NAK**: `AlignStreamFrame` gains `ackSeq` and `nakSeq` (`number?`) for NOP v0.6 sliding-window acknowledgement.
-- **NOP — Saga compensation**: `TaskFrame.compensationPolicy`; `DelegateFrame.targetClusterAnchor`; `AggregateStrategy.WEIGHTED_FIRST_K` / `MERGE_ALL`.
-- **NDP — `GraphFrame` §5** (Breaking rewrite): `NdpGraphNode`, `NdpGraphEdge` interfaces; `GraphFrame` with `graphId`, `nodes`, `edges`, `ttl`, `metadata`. Max 256 nodes / 1024 edges.
-- **NDP — `SecurityProfile`**: `LOCAL_DEV` / `ORG_PRIVATE` / `PUBLIC_FEDERATED` const.
-- **NIP — `IdentFrame.ocspStaple`**: base64url DER OCSP response field; `IdentReputationPolicyHint` interface.
-
-### Tracking the suite
-
-This release tracks NPS suite `v1.0.0-alpha.11`. NCP v0.7 / NWP v0.13 / NIP v0.9 / NDP v0.8 / NOP v0.6.
-
----
-
-## [1.0.0-alpha.10] — 2026-05-28
-
-### Added
-
-- **NOP — Saga compensation**: `DagNode` interface with `compensateAction` / `compensateParamsMapping`; `TaskState.COMPENSATING` / `COMPENSATED`; `CompensationPolicy` object.
-- **NDP — `SecurityProfile`**: `LOCAL_DEV` / `ORG_PRIVATE` / `PUBLIC_FEDERATED` const.
-- **NIP — `IdentReputationPolicyHint`**: Reputation policy hint interface; `IdentMetadata` interface.
-
-### Tracking the suite
-
-This release tracks NPS suite `v1.0.0-alpha.10`.
-
----
-
-## [1.0.0-alpha.9] — 2026-05-28
-
-### Added
-
-- **NWP — `SubscribeFrame` (0x12)**: Initial `SubscribeFrame` class (pre-CR-0006 format — replaced in alpha.11).
-- **NWP — `ReputationPolicy` / `RepOutcome`**: RFC-0005 reputation types.
-
-### Tracking the suite
-
-This release tracks NPS suite `v1.0.0-alpha.9`.
-
----
-
-## [1.0.0-alpha.8] — 2026-05-28
-
-### Tracking the suite
-
-This release tracks NPS suite `v1.0.0-alpha.8`.
-
-Suite highlights: RFC-0005 `ReputationPolicyEvaluator` in .NET SDK; cgn_limit
-pre-execution enforcement; RFC-0002 and RFC-0005 promoted to Accepted.
-
----
-
-## [1.0.0-alpha.7] — 2026-05-17
-
-### Added
-
-- **`nip/reputation-client.ts` — `ReputationLogClient` (NPS-RFC-0004 Phase 2)**: Full fetch-based client for the reputation-log operator API. `submitEntry`, `queryEntries`, `getSth`, `getProof`, `getGossipSth`. `verifyInclusion` performs RFC 9162 §2.1.3.2 Merkle audit-path verification locally using `@noble/hashes/sha256`. `signEntry` / `verifyEntry` sign and verify entries with `@noble/ed25519`. Wire types: `ReputationLogEntry`, `SignedTreeHead`, `InclusionProof`, `ObservationWindow`. `AnchorTopologyError` carries `nwpErrorCode` + `npsStatus`. 30 regression tests. Re-exported from `@labacacia/nps-sdk/nip`.
-
-- **`nwp/anchor-client.ts` — `AnchorNodeClient` (NPS-CR-0002)**: Fetch-based client for Anchor Node topology queries. `getSnapshot` (topology.snapshot) and `subscribe` async generator (topology.stream NDJSON). Discriminated-union `TopologyEvent` with kinds: `member_joined`, `member_left`, `member_updated`, `anchor_state`, `resync_required`. `AnchorTopologyError` for protocol errors. 24 regression tests.
-
-### Tracking the suite
-
-This release tracks NPS suite `v1.0.0-alpha.7`.
-
----
-
-## [1.0.0-alpha.6] — 2026-05-14
-
-### Changed
-
-- **`nip/x509/oids.ts` — IANA PEN 65715 (Breaking, CR-0004)**: `LAB_ACACIA_PEN_ARC` updated from `"1.3.6.1.4.1.99999"` to `"1.3.6.1.4.1.65715"`. Certificates issued under the provisional arc must be revoked and re-issued.
-
-- **`nwp/index.ts` — `NwpErrorCodes` re-export removed (Breaking)**: `export * as NwpErrorCodes from "./error-codes.js"` removed from the barrel. Import directly from `@labacacia/nps-sdk/nwp/error-codes` if needed.
-
-- **Version bump to `1.0.0-alpha.6`** — synchronized with NPS suite alpha.6 release.
-
----
-
-## [1.0.0-alpha.5] — 2026-05-01
-
-### Added
-
-- **NWP error code constants** — new `NwpErrorCodes` namespace exported from `@labacacia/nps-sdk/nwp` with all 30 NWP wire error codes (auth, query, action, task, subscribe, infrastructure, manifest, topology, reserved-type). Missing from previous releases.
-- **`NpsStatusCodes.NPS_SERVER_UNSUPPORTED`** — new status code `"NPS-SERVER-UNSUPPORTED"` (HTTP 501) in `src/core/status-codes.ts`, per spec/status-codes.md alpha.5 update.
-- **`NDP.resolveWithDns` — DNS TXT fallback resolution** — new `InMemoryNdpRegistry.resolveWithDns(target, resolver?)` falls back to `_nps-node.{host}` TXT record lookup (NPS-4 §5) when no in-memory entry matches. New `DnsTxtLookup` interface + `SystemDnsTxtLookup` (Node.js `dns.promises`); `parseNpsTxtRecord` + `extractHostFromTarget` helpers exported from `@labacacia/nps-sdk/ndp`. Tests: 284 → 294.
-
-### Changed
-
-- **`AssuranceLevel.fromWire("")` returns `Anonymous`** — `if (wire == null)` changed to `if (!wire)` so `""` returns `Anonymous` instead of `Unknown` (spec §5.1.1 backward-compat fix).
-- **Version bump to `1.0.0-alpha.5`** — synchronized with NPS suite alpha.5 release.
-
-### Fixed
-
-- **`REPUTATION_GOSSIP_FORK` / `REPUTATION_GOSSIP_SIG_INVALID`** — two new NIP reputation gossip error codes added to `src/nip/error-codes.ts` (RFC-0004 Phase 3).
-
----
-
-## [1.0.0-alpha.4] — 2026-04-30
-
-### Added
-
-- **NPS-RFC-0001 Phase 2 — NCP connection preamble (TypeScript helper
-  parity).** `src/ncp/preamble.ts` exposes `writePreamble(stream)` and
-  `readPreamble(stream)` round-tripping the literal `b"NPS/1.0\n"`
-  sentinel; matched by `tests/ncp/preamble.test.ts`. Brings TypeScript
-  in line with the .NET / Python / Go / Java preamble helpers shipped
-  at alpha.4.
-- **NPS-RFC-0002 Phase A/B — X.509 NID certificates + ACME `agent-01`
-  (TypeScript port).** New surface under `src/nip/`:
-  - `nip/x509/` — X.509 NID certificate builder + verifier
-    (`x509.Builder`, `x509.Verifier`).
-  - `nip/acme/` — ACME `agent-01` client + server reference
-    (`AcmeServer`, `AcmeClient`); JWS-signed wire envelope per
-    NPS-RFC-0002 Phase B.
-  - `nip/assurance-level.ts` — agent identity assurance levels
-    (`anonymous` / `attested` / `verified`) per NPS-RFC-0003.
-  - `nip/cert-format.ts` — IdentFrame `cert_format` discriminator
-    (`v1` Ed25519 vs. `x509`).
-  - `nip/error-codes.ts` — NIP error code namespace strings.
-  - `nip/verifier.ts` — dual-trust IdentFrame verifier (v1 + X.509).
-- 20 new tests covering preamble round-trip, X.509 issuance + parsing,
-  dual-trust verification, and ACME agent-01 round-trip. Total: 284
-  tests green (was 264 at alpha.3).
-
-### Changed
-
-- Distribution version bumped to `1.0.0-alpha.4`.
-- `src/nip/frames.ts` — IdentFrame wire shape extended with optional
-  `cert_format` discriminator + `x509_chain` field alongside the
-  existing v1 Ed25519 fields. v1 IdentFrames written by alpha.3
-  consumers continue to verify unchanged.
-
-### Note: npm publish status
-
-- This repo / tag is the canonical `1.0.0-alpha.4` reference for
-  `@labacacia/nps-sdk`. As at the alpha.3 ship cycle, npm publish
-  may require a granular access token with 2FA-bypass enabled — if
-  the registry version lags this repo's tag, the tag is the
-  authoritative artifact and `npm install` against the next
-  registry cut will resolve to this commit.
-
-### Suite-wide highlights at alpha.4
-
-- **NPS-RFC-0002 X.509 + ACME** — full cross-SDK port wave (.NET /
-  Java / Python / TypeScript / Go / Rust). Servers can now issue
-  dual-trust IdentFrames (v1 Ed25519 + X.509 leaf cert chained to a
-  self-signed root) and self-onboard NIDs over ACME's `agent-01`
-  challenge type.
-- **NPS-CR-0002 — Anchor Node topology queries** — `topology.snapshot`
-  / `topology.stream` query types (.NET reference + L2 conformance
-  suite). TypeScript consumer-side helpers planned for a later
-  release.
-- **`nps-registry` SQLite-backed real registry** + **`nps-ledger`
-  Phase 2** (RFC 9162 Merkle + STH + inclusion proofs) shipped in the
-  daemon repos.
-
----
-
-## [1.0.0-alpha.3] — 2026-04-25
-
-### Changed
-
-- Version bump to `1.0.0-alpha.3` for suite-wide synchronization with the NPS `v1.0.0-alpha.3` release. No functional changes in the TypeScript SDK at this milestone.
-- 264 tests, ≥98% coverage still green.
-
-### Suite-wide highlights at alpha.3 (per-language helpers planned for alpha.4)
-
-- **NPS-RFC-0001 — NCP connection preamble** (Accepted). Native-mode connections now begin with the literal `b"NPS/1.0\n"` (8 bytes). Reference helper landed in the .NET SDK; TypeScript helper deferred to alpha.4.
-- **NPS-RFC-0003 — Agent identity assurance levels** (Accepted). NIP IdentFrame and NWM gain a tri-state `assurance_level` (`anonymous`/`attested`/`verified`). Reference types landed in .NET; TypeScript parity deferred to alpha.4.
-- **NPS-RFC-0004 — NID reputation log (CT-style)** (Accepted). Append-only Merkle log entry shape published; reference signer landed in .NET (and shipped as the `nps-ledger` daemon Phase 1). TypeScript helpers deferred to alpha.4.
-- **NPS-CR-0001 — Anchor / Bridge node split.** The legacy "Gateway Node" role is renamed to **Anchor Node**; the "translate NPS↔external protocol" role is now its own **Bridge Node** type. AnnounceFrame gained `node_kind` / `cluster_anchor` / `bridge_protocols`. Source-of-truth changes are in `spec/` + the .NET reference implementation.
-- **6 NPS resident daemons.** New `daemons/` tree in NPS-Dev defines `npsd` / `nps-runner` / `nps-gateway` / `nps-registry` / `nps-cloud-ca` / `nps-ledger`; `npsd` ships an L1-functional reference and the rest ship as Phase 1 skeletons.
+- NOP saga compensation: `DagNode.compensate_action/compensate_params_mapping`, `TaskFrame.compensation_policy`, `TaskState.COMPENSATING/COMPENSATED`, `CompensationPolicy` constants (alpha.9 parity)
+- NOP `AggregateStrategy.WEIGHTED_FIRST_K` and `MERGE_ALL` (alpha.11)
+- NOP `DelegateFrame.target_cluster_anchor`, `AlignStreamFrame.ack_seq/nak_seq` (alpha.11)
+- NDP security profiles: `SecurityProfile` constants + registry enforcement (alpha.9 parity)
+- NDP ephemeral TTL cap (60 s) in registry (alpha.9 parity)
+- NDP `AnnounceFrame` alpha.9 fields: node_roles, cluster_anchor, spawn_spec_ref, bridge_protocols, activation_mode, activation_endpoint
+- NDP `GraphFrame` / `NdpGraphEdge` redesigned to NPS-4 §5 topology snapshot format (alpha.11)
+- NIP `IdentReputationPolicyHint` and `IdentMetadata.reputation_policy` (alpha.10 parity)
+- NIP `IdentFrame.ocsp_staple` (alpha.11)
+- NWP `SubscribeFrame` and NWM `trust_anchors` field (alpha.11)
 
 ---
 
@@ -229,6 +61,5 @@ This release tracks NPS suite `v1.0.0-alpha.7`.
 
 First public alpha as part of the NPS suite `v1.0.0-alpha.1` release.
 
-[1.0.0-alpha.7]: https://github.com/labacacia/NPS-sdk-ts/releases/tag/v1.0.0-alpha.7
 [1.0.0-alpha.2]: https://github.com/LabAcacia/nps/releases/tag/v1.0.0-alpha.2
 [1.0.0-alpha.1]: https://github.com/LabAcacia/nps/releases/tag/v1.0.0-alpha.1

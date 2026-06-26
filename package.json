@@ -33,6 +33,10 @@
     "./nop": {
       "import": "./dist/nop/index.js",
       "types": "./dist/nop/index.d.ts"
+    },
+    "./conformance": {
+      "import": "./dist/conformance.js",
+      "types": "./dist/conformance.d.ts"
     }
   },
   "scripts": {

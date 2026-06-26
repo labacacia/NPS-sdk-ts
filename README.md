@@ -1,6 +1,14 @@
 English | [中文版](./README.cn.md)
 
 # @labacacia/nps-sdk — TypeScript / Node.js
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/badge/release-v1.0.0--alpha.13-orange.svg)](CHANGELOG.md)
+[![Next](https://img.shields.io/badge/next-v1.0.0--alpha.14--candidate-yellow.svg)](CHANGELOG.md#100-alpha14--unreleased)
+[![NCP](https://img.shields.io/badge/NCP-v0.8-5b8cff.svg)]()
+[![NWP](https://img.shields.io/badge/NWP-v0.14-4af0b0.svg)]()
+[![NIP](https://img.shields.io/badge/NIP-v0.10-7b61ff.svg)]()
+[![NDP](https://img.shields.io/badge/NDP-v0.9-f0a050.svg)]()
+[![NOP](https://img.shields.io/badge/NOP-v0.7-ff8c42.svg)]()
 
 TypeScript SDK for the **Neural Protocol Suite** (NPS) — a protocol suite designed for AI Agents.  
 Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-source ecosystem.
@@ -9,12 +17,12 @@ Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-
 
 **v1.0.0-alpha.13 — RFC-0002 cross-SDK port (third language)** · 5 protocols · 271 tests · ≥ 98% coverage
 
-> npm registry note: `@labacacia/nps-sdk@1.0.0-alpha.11` was deprecated because its published tarball omitted `dist/`. That is fixed in `1.0.0-alpha.13` — install `@labacacia/nps-sdk@alpha` (the `alpha` dist-tag now resolves to `1.0.0-alpha.13`).
+Alpha.14 candidate additions: typed remote NIP CA client (`NipCaClient`), native-mode NWP serving helper (`NwpNativeNodeServer`), and TC-N1/TC-N2 conformance manifest helpers (`@labacacia/nps-sdk/conformance`).
 
 | Protocol | Class | Status |
 |----------|-------|--------|
 | NCP — Neural Communication Protocol | Framing, codec | ✅ |
-| NWP — Neural Web Protocol | `NwpClient` | ✅ |
+| NWP — Neural Web Protocol | `NwpClient`, `NwpNativeNodeServer` | ✅ |
 | NIP — Neural Identity Protocol | `NipIdentity`, `NipIdentVerifier` (RFC-0002 §8.1 dual-trust), `AssuranceLevel` (RFC-0003), `nip.x509` + `nip.acme` | ✅ |
 | NDP — Neural Discovery Protocol | `InMemoryNdpRegistry`, `NdpAnnounceValidator` | ✅ |
 | NOP — Neural Orchestration Protocol | `NopClient` | ✅ |
@@ -28,7 +36,7 @@ Part of the [LabAcacia](https://github.com/LabAcacia) / INNO LOTUS PTY LTD open-
 ## Installation
 
 ```bash
-npm install @labacacia/nps-sdk@alpha
+npm install @labacacia/nps-sdk
 ```
 
 > **Peer requirement:** Node.js 22+
@@ -61,6 +69,20 @@ import { ActionFrame } from "@labacacia/nps-sdk/nwp";
 const result = await client.invoke(new ActionFrame("summarise", { maxTokens: 500 }));
 ```
 
+### NWP — native serving
+
+```typescript
+import { NwpNativeNodeServer } from "@labacacia/nps-sdk/nwp";
+
+const server = new NwpNativeNodeServer({
+  queryHandler: () => [{ id: 42 }],
+  actionHandler: (action) => ({ action: action.actionId }),
+});
+
+// `source`/`sink` are already past NCP preamble, TLS, and Hello negotiation.
+await server.serve(source, sink);
+```
+
 ### NIP — Ed25519 identity
 
 ```typescript
@@ -74,6 +96,43 @@ id.save("./my-key.json", process.env.KEY_PASS!);
 const loaded = NipIdentity.load("./my-key.json", process.env.KEY_PASS!);
 const sig    = loaded.sign({ action: "announce", nid: "urn:nps:node:example.com:data" });
 const ok     = loaded.verify({ action: "announce", nid: "urn:nps:node:example.com:data" }, sig);
+```
+
+### NIP — remote CA client
+
+```typescript
+import { NipCaClient } from "@labacacia/nps-sdk/nip";
+
+const ca = new NipCaClient("https://ca.example.com", { routePrefix: "/nip" });
+const discovery = await ca.getDiscovery();
+const ident = await ca.registerAgent(
+  { identifier: "agent-a", pub_key: "ed25519:<pub>", capabilities: ["nwp:query"] },
+  "token",
+);
+const status = await ca.verifyAgent(ident.nid);
+```
+
+### Conformance manifest
+
+```typescript
+import {
+  NODE_L1,
+  catalogForProfile,
+  createConformanceManifest,
+  validateConformanceManifest,
+} from "@labacacia/nps-sdk/conformance";
+
+const results = catalogForProfile(NODE_L1).map((c) => ({ id: c.id, result: "pass" as const }));
+const manifest = createConformanceManifest({
+  profile: NODE_L1,
+  iutName: "my-node",
+  iutVersion: "1.0.0-alpha.14",
+  iutNid: "urn:nps:node:example.com:my-node",
+  peerName: "labacacia-fixture",
+  peerVersion: "1.0.0-alpha.14",
+  results,
+});
+const validation = validateConformanceManifest(manifest);
 ```
 
 ### NDP — registry and signature validation
@@ -116,6 +175,7 @@ import { ... } from "@labacacia/nps-sdk/nwp";        // NwpClient, QueryFrame, A
 import { ... } from "@labacacia/nps-sdk/nip";        // NipIdentity, IdentFrame, TrustFrame, RevokeFrame
 import { ... } from "@labacacia/nps-sdk/ndp";        // InMemoryNdpRegistry, NdpAnnounceValidator, AnnounceFrame, …
 import { ... } from "@labacacia/nps-sdk/nop";        // NopClient, NopTaskStatus, TaskFrame, …
+import { ... } from "@labacacia/nps-sdk/conformance"; // TC-N1/TC-N2 catalogs and manifest validator
 ```
 
 ## NCP Codec
@@ -160,4 +220,4 @@ node node_modules/tsup/dist/cli-default.js
 
 ## License
 
-Apache 2.0 — see [LICENSE](https://github.com/labacacia/NPS-Dev/blob/main/LICENSE)
+Apache 2.0 — see [LICENSE](LICENSE)

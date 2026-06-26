@@ -13,3 +13,4 @@ export * from "./reputation.js";
 export * from "./http-headers.js";
 export * from "./anchor-server.js";
 export * from "./memory-node-server.js";
+export * from "./native-server.js";

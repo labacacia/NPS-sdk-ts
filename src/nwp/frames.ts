@@ -170,6 +170,7 @@ export class ActionFrame implements NpsFrame {
   toDict(): Record<string, unknown> {
     return {
       action_id:       this.actionId,
+      action:          this.actionId,
       params:          this.params          ?? null,
       async:           this.async_          ?? false,
       idempotency_key: this.idempotencyKey  ?? null,
@@ -179,7 +180,7 @@ export class ActionFrame implements NpsFrame {
 
   static fromDict(data: Record<string, unknown>): ActionFrame {
     return new ActionFrame(
-      data["action_id"]       as string,
+      (data["action_id"] ?? data["action"]) as string,
       (data["params"]          as Record<string, unknown> | null) ?? undefined,
       (data["async"]           as boolean | null) ?? undefined,
       (data["idempotency_key"] as string  | null) ?? undefined,
