@@ -171,7 +171,7 @@ describe("NCP-E-05 / E-07: BinaryVector and reserved encoding tier", () => {
   });
 
   it("NCP-E-07: decodes BinaryVector payload conformance fixture", () => {
-    const fixturePath = fileURLToPath(new URL("../../../../spec/conformance/ncp/binary_vector_payload_vectors.json", import.meta.url));
+    const fixturePath = fileURLToPath(new URL("../fixtures/conformance/ncp/binary_vector_payload_vectors.json", import.meta.url));
     const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
       vectors: Array<{
         input: { payload_hex: string };
