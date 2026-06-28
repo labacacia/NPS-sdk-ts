@@ -3,6 +3,10 @@
 
 import { EncodingTier, FrameType } from "../core/frames.js";
 import type { NpsFrame } from "../core/codec.js";
+import { NDP_GRAPH_INVALID, NDP_GRAPH_TOO_LARGE } from "./ndp-error-codes.js";
+
+const MAX_GRAPH_NODES = 256;
+const MAX_GRAPH_EDGES = 1024;
 
 export interface NdpAddress {
   host:     string;
@@ -44,10 +48,10 @@ export class AnnounceFrame implements NpsFrame {
     public readonly nodeType?:            string,
     public readonly node_roles?:          string[],
     public readonly cluster_anchor?:      string,
-    public readonly spawn_spec_ref?:      Record<string, unknown>, // NDP v0.9 §3.1.1 schema
+    public readonly spawn_spec_ref?:      string, // opaque ref resolving to a SpawnSpec
     public readonly bridge_protocols?:    string[],
     public readonly activation_mode?:     string,
-    public readonly activation_endpoint?: string,
+    public readonly activation_endpoint?: NdpAddress,
     public readonly heartbeat_interval_ms: number = 60_000, // NDP v0.9 §3.1
     // NDP v0.9 liveness — wire-only, EXCLUDED from the signed canonical form
     // (last_seen updates every heartbeat → must not require re-signing; §3.2.1).
@@ -56,21 +60,22 @@ export class AnnounceFrame implements NpsFrame {
   ) {}
 
   unsignedDict(): Record<string, unknown> {
-    return {
+    const d: Record<string, unknown> = {
       nid:                  this.nid,
       addresses:            this.addresses,
       capabilities:         this.capabilities,
       ttl:                  this.ttl,
       timestamp:            this.timestamp,
-      node_type:            this.nodeType            ?? null,
-      node_roles:           this.node_roles           ?? null,
-      cluster_anchor:       this.cluster_anchor       ?? null,
-      spawn_spec_ref:       this.spawn_spec_ref       ?? null,
-      bridge_protocols:     this.bridge_protocols     ?? null,
-      activation_mode:       this.activation_mode        ?? null,
-      activation_endpoint:   this.activation_endpoint    ?? null,
       heartbeat_interval_ms: this.heartbeat_interval_ms,
     };
+    if (this.nodeType !== undefined) d["node_type"] = this.nodeType;
+    if (this.node_roles !== undefined) d["node_roles"] = this.node_roles;
+    if (this.cluster_anchor !== undefined) d["cluster_anchor"] = this.cluster_anchor;
+    if (this.spawn_spec_ref !== undefined) d["spawn_spec_ref"] = this.spawn_spec_ref;
+    if (this.bridge_protocols !== undefined) d["bridge_protocols"] = this.bridge_protocols;
+    if (this.activation_mode !== undefined) d["activation_mode"] = this.activation_mode;
+    if (this.activation_endpoint !== undefined) d["activation_endpoint"] = this.activation_endpoint;
+    return d;
   }
 
   toDict(): Record<string, unknown> {
@@ -92,10 +97,10 @@ export class AnnounceFrame implements NpsFrame {
       (data["node_type"]            as string | null) ?? undefined,
       ((data["node_roles"] ?? data["node_kind"]) as string[] | null) ?? undefined,
       (data["cluster_anchor"]       as string | null) ?? undefined,
-      (data["spawn_spec_ref"]         as Record<string, unknown> | null) ?? undefined,
+      (data["spawn_spec_ref"]         as string | null) ?? undefined,
       (data["bridge_protocols"]       as string[] | null) ?? undefined,
       (data["activation_mode"]        as string | null) ?? undefined,
-      (data["activation_endpoint"]    as string | null) ?? undefined,
+      (data["activation_endpoint"]    as NdpAddress | null) ?? undefined,
       (data["heartbeat_interval_ms"]  as number | null) ?? 60_000,
       (data["health"]                 as string | null) ?? undefined,
       (data["last_seen"]              as string | null) ?? undefined,
@@ -148,7 +153,9 @@ export class GraphFrame implements NpsFrame {
     public readonly edges:     readonly NdpGraphEdge[],
     public readonly ttl:       number,
     public readonly metadata?: Record<string, unknown>,
-  ) {}
+  ) {
+    validateGraphFrame(nodes, edges);
+  }
 
   toDict(): Record<string, unknown> {
     return {
@@ -168,5 +175,30 @@ export class GraphFrame implements NpsFrame {
       data["ttl"]      as number,
       (data["metadata"] as Record<string, unknown> | null) ?? undefined,
     );
+  }
+}
+
+function validateGraphFrame(nodes: readonly NdpGraphNode[], edges: readonly NdpGraphEdge[]): void {
+  if (nodes.length > MAX_GRAPH_NODES) {
+    throw new Error(`${NDP_GRAPH_TOO_LARGE}: nodes length exceeds ${MAX_GRAPH_NODES}`);
+  }
+  if (edges.length > MAX_GRAPH_EDGES) {
+    throw new Error(`${NDP_GRAPH_TOO_LARGE}: edges length exceeds ${MAX_GRAPH_EDGES}`);
+  }
+
+  const nodeIds = new Set(nodes.map((node) => node.nid));
+  if (nodes.some((node) => !node.nid)) {
+    throw new Error(`${NDP_GRAPH_INVALID}: graph nodes require nid`);
+  }
+  for (const edge of edges) {
+    if (!edge.from_nid || !edge.to_nid) {
+      throw new Error(`${NDP_GRAPH_INVALID}: graph edges require from_nid and to_nid`);
+    }
+    if (edge.from_nid === edge.to_nid) {
+      throw new Error(`${NDP_GRAPH_INVALID}: graph self-edges are forbidden`);
+    }
+    if (!nodeIds.has(edge.from_nid) || !nodeIds.has(edge.to_nid)) {
+      throw new Error(`${NDP_GRAPH_INVALID}: graph edge endpoints must appear in nodes`);
+    }
   }
 }

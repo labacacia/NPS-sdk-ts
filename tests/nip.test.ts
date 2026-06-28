@@ -102,14 +102,14 @@ describe("NipIdentity", () => {
 
 describe("IdentFrame", () => {
   const NID  = "urn:nps:node:example.com:svc";
-  const meta = { issuer: "urn:nps:ca:root", issuedAt: "2026-01-01T00:00:00Z", expiresAt: "2027-01-01T00:00:00Z" };
+  const meta = { issuer: "urn:nps:org:root", issuedAt: "2026-01-01T00:00:00Z", expiresAt: "2027-01-01T00:00:00Z" };
 
   it("toDict / fromDict roundtrip", () => {
     const f    = new IdentFrame(NID, "ed25519:aabbcc", meta, "ed25519:sig");
     const back = IdentFrame.fromDict(f.toDict());
     expect(back.nid).toBe(NID);
     expect(back.pubKey).toBe("ed25519:aabbcc");
-    expect(back.metadata.issuer).toBe("urn:nps:ca:root");
+    expect(back.metadata.issuer).toBe("urn:nps:org:root");
     expect(back.signature).toBe("ed25519:sig");
   });
 
@@ -135,23 +135,46 @@ describe("IdentFrame", () => {
 describe("TrustFrame", () => {
   it("toDict / fromDict roundtrip", () => {
     const f    = new TrustFrame(
-      "urn:nps:node:issuer:1", "urn:nps:node:subject:1",
-      ["nwp/query"], "2027-01-01T00:00:00Z", "ed25519:sig",
+      "urn:nps:org:org-a.com",
+      "urn:nps:org:org-b.com",
+      ["nwp:query"],
+      ["nwp://api.org-a.com/public/**"],
+      "2026-05-11T00:00:00Z",
+      "2027-01-01T00:00:00Z",
+      "00000000000A3F9C",
+      "urn:nps:org:org-a.com",
+      "ed25519:sig",
     );
     const back = TrustFrame.fromDict(f.toDict());
-    expect(back.issuerNid).toBe("urn:nps:node:issuer:1");
-    expect(back.subjectNid).toBe("urn:nps:node:subject:1");
-    expect(back.scopes[0]).toBe("nwp/query");
+    expect(back.grantorNid).toBe("urn:nps:org:org-a.com");
+    expect(back.granteeCa).toBe("urn:nps:org:org-b.com");
+    expect(back.trustScope[0]).toBe("nwp:query");
+    expect(back.nodes[0]).toBe("nwp://api.org-a.com/public/**");
+    expect(back.issuedAt).toBe("2026-05-11T00:00:00Z");
     expect(back.expiresAt).toBe("2027-01-01T00:00:00Z");
+    expect(back.serial).toBe("00000000000A3F9C");
+    expect(back.signerNid).toBe("urn:nps:org:org-a.com");
     expect(back.signature).toBe("ed25519:sig");
+    expect(back.unsignedDict()).not.toHaveProperty("signature");
   });
 
   it("codec roundtrip (MsgPack)", () => {
     const registry = createFullRegistry();
     const codec    = new NpsFrameCodec(registry);
-    const f        = new TrustFrame("urn:nps:node:a:1", "urn:nps:node:b:1", ["nwp/query"], "2027-01-01T00:00:00Z", "ed25519:sig");
+    const f        = new TrustFrame(
+      "urn:nps:org:a.com",
+      "urn:nps:org:b.com",
+      ["nwp:query"],
+      ["nwp://api.a.com/public/**"],
+      "2026-05-11T00:00:00Z",
+      "2027-01-01T00:00:00Z",
+      "00000000000A3F9D",
+      "urn:nps:org:a.com",
+      "ed25519:sig",
+    );
     const back     = codec.decode(codec.encode(f)) as TrustFrame;
     expect(back).toBeInstanceOf(TrustFrame);
+    expect(back.granteeCa).toBe("urn:nps:org:b.com");
   });
 });
 
@@ -159,26 +182,61 @@ describe("TrustFrame", () => {
 
 describe("RevokeFrame", () => {
   it("toDict / fromDict with all fields", () => {
-    const f    = new RevokeFrame("urn:nps:node:a:1", "compromised", "2026-06-01T00:00:00Z");
+    const f    = new RevokeFrame(
+      "urn:nps:agent:ca.example.com:session-1",
+      "parent_revoked",
+      "2026-06-01T00:00:00Z",
+      "urn:nps:org:ca.example.com",
+      "ed25519:sig",
+      "0x0A3F9C",
+      "urn:nps:agent:ca.example.com:group-1",
+    );
     const back = RevokeFrame.fromDict(f.toDict());
-    expect(back.nid).toBe("urn:nps:node:a:1");
-    expect(back.reason).toBe("compromised");
+    expect(back.targetNid).toBe("urn:nps:agent:ca.example.com:session-1");
+    expect(back.serial).toBe("0x0A3F9C");
+    expect(back.reason).toBe("parent_revoked");
     expect(back.revokedAt).toBe("2026-06-01T00:00:00Z");
-  });
-
-  it("optional fields default to undefined", () => {
-    const f    = new RevokeFrame("urn:nps:node:a:1");
-    const back = RevokeFrame.fromDict(f.toDict());
-    expect(back.reason).toBeUndefined();
-    expect(back.revokedAt).toBeUndefined();
+    expect(back.parentNid).toBe("urn:nps:agent:ca.example.com:group-1");
+    expect(back.signerNid).toBe("urn:nps:org:ca.example.com");
+    expect(back.unsignedDict()).not.toHaveProperty("signature");
   });
 
   it("codec roundtrip (MsgPack)", () => {
     const registry = createFullRegistry();
     const codec    = new NpsFrameCodec(registry);
-    const f        = new RevokeFrame("urn:nps:node:a:1", "expired");
+    const f        = new RevokeFrame(
+      "urn:nps:agent:ca.example.com:old",
+      "key_compromise",
+      "2026-06-01T00:00:00Z",
+      "urn:nps:org:ca.example.com",
+      "ed25519:sig",
+    );
     const back     = codec.decode(codec.encode(f)) as RevokeFrame;
     expect(back).toBeInstanceOf(RevokeFrame);
-    expect(back.reason).toBe("expired");
+    expect(back.reason).toBe("key_compromise");
+    expect(back.serial).toBeUndefined();
+  });
+
+  it("rejects parent_revoked without parent_nid", () => {
+    expect(() => RevokeFrame.fromDict({
+      frame:      "0x22",
+      target_nid: "urn:nps:agent:ca.example.com:session-1",
+      reason:     "parent_revoked",
+      revoked_at: "2026-06-01T00:00:00Z",
+      signer_nid: "urn:nps:org:ca.example.com",
+      signature:  "ed25519:sig",
+    })).toThrow(/NIP-REVOKE-FRAME-INVALID/);
+  });
+
+  it("rejects parent_nid unless reason is parent_revoked", () => {
+    expect(() => RevokeFrame.fromDict({
+      frame:      "0x22",
+      target_nid: "urn:nps:agent:ca.example.com:old",
+      reason:     "key_compromise",
+      revoked_at: "2026-06-01T00:00:00Z",
+      parent_nid: "urn:nps:agent:ca.example.com:group-1",
+      signer_nid: "urn:nps:org:ca.example.com",
+      signature:  "ed25519:sig",
+    })).toThrow(/NIP-REVOKE-FRAME-INVALID/);
   });
 });

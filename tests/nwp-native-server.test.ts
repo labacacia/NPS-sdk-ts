@@ -45,6 +45,38 @@ describe("NwpNativeNodeServer", () => {
     expect((frame as CapsFrame).data[0]?.action).toBe("ping");
   });
 
+  it("rejects unnegotiated BinaryVector frames", async () => {
+    const codec = new NpsFrameCodec(createFullRegistry());
+    const server = new NwpNativeNodeServer({
+      codec,
+      queryHandler: () => [{ id: 42 }],
+    });
+    const out = await server.dispatchWire(
+      codec.encode(vectorQuery(), { overrideTier: EncodingTier.BINARY_VECTOR }),
+    );
+    const frame = codec.decode(out);
+
+    expect(frame).toBeInstanceOf(ErrorFrame);
+    expect((frame as ErrorFrame).status).toBe("NPS-SERVER-ENCODING-UNSUPPORTED");
+    expect((frame as ErrorFrame).error).toBe("NCP-ENCODING-UNSUPPORTED");
+  });
+
+  it("allows negotiated BinaryVector QueryFrame", async () => {
+    const codec = new NpsFrameCodec(createFullRegistry());
+    const server = new NwpNativeNodeServer({
+      codec,
+      enabledEncodings: ["msgpack", "binary_vector.v1"],
+      queryHandler: () => [{ id: 42 }],
+    });
+    const out = await server.dispatchWire(
+      codec.encode(vectorQuery(), { overrideTier: EncodingTier.BINARY_VECTOR }),
+    );
+    const frame = codec.decode(out);
+
+    expect(frame).toBeInstanceOf(CapsFrame);
+    expect((frame as CapsFrame).count).toBe(1);
+  });
+
   it("accepts the legacy action key", () => {
     const frame = ActionFrame.fromDict({ action: "ping" });
 
@@ -59,3 +91,15 @@ describe("NwpNativeNodeServer", () => {
     expect((frame as ErrorFrame).error).toBe("NWP-NATIVE-FRAME-UNSUPPORTED");
   });
 });
+
+function vectorQuery(): QueryFrame {
+  return new QueryFrame(
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    { field: "embedding", vector: [0.25, -1.5, 3.0], top_k: 1 },
+  );
+}

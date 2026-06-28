@@ -23,7 +23,7 @@ x509.cryptoProvider.set(globalThis.crypto);
 describe("NipX509 — RFC-0002 §4 verifier scenarios", () => {
 
   it("registerX509 round-trip — dual-trust verifier accepts", async () => {
-    const caNid    = "urn:nps:ca:test";
+    const caNid    = "urn:nps:org:test";
     const agentNid = "urn:nps:agent:happy:1";
 
     const ca    = await generateDualKeyPair();
@@ -56,7 +56,7 @@ describe("NipX509 — RFC-0002 §4 verifier scenarios", () => {
   });
 
   it("leaf without EKU extension — verifier rejects with NIP-CERT-EKU-MISSING", async () => {
-    const caNid    = "urn:nps:ca:test";
+    const caNid    = "urn:nps:org:test";
     const agentNid = "urn:nps:agent:eku-stripped:1";
 
     const ca    = await generateDualKeyPair();
@@ -85,7 +85,7 @@ describe("NipX509 — RFC-0002 §4 verifier scenarios", () => {
   });
 
   it("leaf for different NID — verifier rejects with NIP-CERT-SUBJECT-NID-MISMATCH", async () => {
-    const caNid    = "urn:nps:ca:test";
+    const caNid    = "urn:nps:org:test";
     const victimNid = "urn:nps:agent:victim:1";
     const forgedNid = "urn:nps:agent:attacker:9";
 
@@ -122,7 +122,7 @@ describe("NipX509 — RFC-0002 §4 verifier scenarios", () => {
   });
 
   it("v1-only verifier ignores cert_chain and accepts v2 frames (Phase 1 backward compat)", async () => {
-    const caNid    = "urn:nps:ca:test";
+    const caNid    = "urn:nps:org:test";
     const agentNid = "urn:nps:agent:v1-compat:1";
 
     const ca    = await generateDualKeyPair();
@@ -155,7 +155,7 @@ describe("NipX509 — RFC-0002 §4 verifier scenarios", () => {
   });
 
   it("v2 verifier with unrelated trust root rejects with NIP-CERT-FORMAT-INVALID", async () => {
-    const caNid    = "urn:nps:ca:test";
+    const caNid    = "urn:nps:org:test";
     const agentNid = "urn:nps:agent:wrong-trust:1";
 
     const ca    = await generateDualKeyPair();
@@ -180,7 +180,7 @@ describe("NipX509 — RFC-0002 §4 verifier scenarios", () => {
     // Different unrelated CA root — chain won't anchor.
     const otherCa   = await generateDualKeyPair();
     const otherRoot = await issueRoot({
-      caNid: "urn:nps:ca:other", caKeys: otherCa.webCrypto,
+      caNid: "urn:nps:org:other", caKeys: otherCa.webCrypto,
       notBefore: minutesAgo(1), notAfter: daysFromNow(365),
       serialNumber: "01",
     });

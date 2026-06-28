@@ -27,6 +27,7 @@ export interface NwpNativeNodeServerOptions {
   codec?: NpsFrameCodec;
   registry?: FrameRegistry;
   tier?: EncodingTier;
+  enabledEncodings?: readonly string[];
   anchorRef?: string;
   queryHandler?: NativeQueryHandler;
   actionHandler?: NativeActionHandler;
@@ -39,6 +40,7 @@ export interface NativeFrameSink {
 export class NwpNativeNodeServer {
   private readonly codec: NpsFrameCodec;
   private readonly tier: EncodingTier;
+  private readonly enabledEncodings: readonly string[];
   private readonly anchorRef: string;
   private readonly queryHandler?: NativeQueryHandler;
   private readonly actionHandler?: NativeActionHandler;
@@ -47,6 +49,7 @@ export class NwpNativeNodeServer {
     const registry = options.registry ?? defaultNativeRegistry();
     this.codec = options.codec ?? new NpsFrameCodec(registry);
     this.tier = options.tier ?? EncodingTier.MSGPACK;
+    this.enabledEncodings = options.enabledEncodings ?? [encodingToken(this.tier)];
     this.anchorRef = options.anchorRef ?? "native:nwp";
     this.queryHandler = options.queryHandler;
     this.actionHandler = options.actionHandler;
@@ -71,7 +74,8 @@ export class NwpNativeNodeServer {
   }
 
   async dispatchWire(wire: Uint8Array<ArrayBufferLike>): Promise<Uint8Array<ArrayBufferLike>> {
-    const response = await this.dispatch(this.codec.decode(wire));
+    const policyError = encodingPolicyError(NpsFrameCodec.peekHeader(wire), this.tier, this.enabledEncodings);
+    const response = policyError ?? await this.dispatch(this.codec.decode(wire));
     return this.codec.encode(response, { overrideTier: this.tier });
   }
 
@@ -144,6 +148,36 @@ function isNpsFrame(value: unknown): value is NpsFrame {
 
 function estimateTokens(rows: readonly unknown[]): number {
   return Math.max(1, Math.floor(JSON.stringify(rows).length / 4));
+}
+
+function encodingPolicyError(
+  header: FrameHeader,
+  defaultTier: EncodingTier,
+  enabledEncodings: readonly string[],
+): ErrorFrame | undefined {
+  if (header.encodingTier === defaultTier) return undefined;
+  if (
+    header.encodingTier === EncodingTier.BINARY_VECTOR &&
+    enabledEncodings.includes("binary_vector.v1") &&
+    header.frameType === FrameType.QUERY
+  ) {
+    return undefined;
+  }
+  return new ErrorFrame(
+    "NPS-SERVER-ENCODING-UNSUPPORTED",
+    "NCP-ENCODING-UNSUPPORTED",
+    `Frame type 0x${header.frameType.toString(16)} used ${encodingToken(header.encodingTier)}, ` +
+      `but the negotiated policy allows ${enabledEncodings.join(", ")}.`,
+  );
+}
+
+function encodingToken(tier: EncodingTier): string {
+  switch (tier) {
+    case EncodingTier.JSON: return "json";
+    case EncodingTier.MSGPACK: return "msgpack";
+    case EncodingTier.BINARY_VECTOR: return "binary_vector.v1";
+    default: return `unknown:${tier as number}`;
+  }
 }
 
 function concat(a: Uint8Array<ArrayBufferLike>, b: Uint8Array<ArrayBufferLike>): Uint8Array<ArrayBufferLike> {

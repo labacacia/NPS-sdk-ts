@@ -4,6 +4,10 @@
 import * as ed25519 from "@noble/ed25519";
 import { sha512 } from "@noble/hashes/sha512";
 import type { AnnounceFrame } from "./frames.js";
+import {
+  NDP_ANNOUNCE_NID_MISMATCH,
+  NDP_ANNOUNCE_SIGNATURE_INVALID,
+} from "./ndp-error-codes.js";
 
 ed25519.etc.sha512Sync = (...m) => sha512(ed25519.etc.concatBytes(...m));
 
@@ -36,7 +40,7 @@ export class NdpAnnounceValidator {
   validate(frame: AnnounceFrame): NdpAnnounceResult {
     const encoded = this._keys.get(frame.nid);
     if (encoded === undefined) {
-      return NdpAnnounceResult.fail("NDP-ANNOUNCE-NID-MISMATCH", `No public key registered for NID: ${frame.nid}`);
+      return NdpAnnounceResult.fail(NDP_ANNOUNCE_NID_MISMATCH, `No public key registered for NID: ${frame.nid}`);
     }
 
     try {
@@ -46,7 +50,7 @@ export class NdpAnnounceValidator {
 
       const sig = frame.signature;
       if (!sig.startsWith(prefix)) {
-        return NdpAnnounceResult.fail("NDP-ANNOUNCE-SIG-INVALID", "Signature must start with 'ed25519:'");
+        return NdpAnnounceResult.fail(NDP_ANNOUNCE_SIGNATURE_INVALID, "Signature must start with 'ed25519:'");
       }
       const sigBytes = Buffer.from(sig.slice(prefix.length), "base64");
 
@@ -55,10 +59,10 @@ export class NdpAnnounceValidator {
       const message   = new TextEncoder().encode(canonical);
 
       const valid = ed25519.verify(sigBytes, message, pubKey);
-      if (!valid) return NdpAnnounceResult.fail("NDP-ANNOUNCE-SIG-INVALID", "Ed25519 signature verification failed.");
+      if (!valid) return NdpAnnounceResult.fail(NDP_ANNOUNCE_SIGNATURE_INVALID, "Ed25519 signature verification failed.");
       return NdpAnnounceResult.ok();
     } catch {
-      return NdpAnnounceResult.fail("NDP-ANNOUNCE-SIG-INVALID", "Ed25519 signature verification failed.");
+      return NdpAnnounceResult.fail(NDP_ANNOUNCE_SIGNATURE_INVALID, "Ed25519 signature verification failed.");
     }
   }
 }

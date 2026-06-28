@@ -59,11 +59,14 @@ import {
   NDP_RESOLVE_NOT_FOUND,
   NDP_RESOLVE_AMBIGUOUS,
   NDP_RESOLVE_TIMEOUT,
+  NDP_RESOLVE_STALE,
   NDP_ANNOUNCE_SIGNATURE_INVALID,
   NDP_ANNOUNCE_NID_MISMATCH,
   NDP_ANNOUNCE_ROLE_REMOVED,
   NDP_ANNOUNCE_ROLE_UNKNOWN,
   NDP_ANNOUNCE_CONFLICT,
+  NDP_ANNOUNCE_PROFILE_VIOLATION,
+  NDP_ANNOUNCE_STALE,
   NDP_GRAPH_SEQ_ROLLBACK,
   NDP_GRAPH_SEQ_GAP,
   NDP_ISSUER_NOT_ALLOWED,
@@ -654,7 +657,7 @@ describe("NIP_ERROR_TO_NPS_STATUS mapping — 38+ codes", () => {
 
 // ── NDP ───────────────────────────────────────────────────────────────────────
 
-describe("NDP error codes — 13 spec codes + extras", () => {
+describe("NDP error codes — completeness", () => {
   it("NDP_RESOLVE_NOT_FOUND wire value", () => {
     expect(NDP_RESOLVE_NOT_FOUND).toBe("NDP-RESOLVE-NOT-FOUND");
   });
@@ -665,6 +668,10 @@ describe("NDP error codes — 13 spec codes + extras", () => {
 
   it("NDP_RESOLVE_TIMEOUT wire value", () => {
     expect(NDP_RESOLVE_TIMEOUT).toBe("NDP-RESOLVE-TIMEOUT");
+  });
+
+  it("NDP_RESOLVE_STALE wire value", () => {
+    expect(NDP_RESOLVE_STALE).toBe("NDP-RESOLVE-STALE");
   });
 
   it("NDP_ANNOUNCE_SIGNATURE_INVALID wire value", () => {
@@ -685,6 +692,14 @@ describe("NDP error codes — 13 spec codes + extras", () => {
 
   it("NDP_ANNOUNCE_CONFLICT wire value", () => {
     expect(NDP_ANNOUNCE_CONFLICT).toBe("NDP-ANNOUNCE-CONFLICT");
+  });
+
+  it("NDP_ANNOUNCE_PROFILE_VIOLATION wire value", () => {
+    expect(NDP_ANNOUNCE_PROFILE_VIOLATION).toBe("NDP-ANNOUNCE-PROFILE-VIOLATION");
+  });
+
+  it("NDP_ANNOUNCE_STALE wire value", () => {
+    expect(NDP_ANNOUNCE_STALE).toBe("NDP-ANNOUNCE-STALE");
   });
 
   it("NDP_GRAPH_SEQ_ROLLBACK wire value", () => {
@@ -733,8 +748,20 @@ describe("NDP_ERROR_TO_NPS_STATUS mapping", () => {
     expect(NDP_ERROR_TO_NPS_STATUS["NDP-RESOLVE-TIMEOUT"]).toBe("NPS-SERVER-TIMEOUT");
   });
 
+  it("NDP-RESOLVE-STALE → NPS-CLIENT-NOT-FOUND", () => {
+    expect(NDP_ERROR_TO_NPS_STATUS["NDP-RESOLVE-STALE"]).toBe("NPS-CLIENT-NOT-FOUND");
+  });
+
   it("NDP-ANNOUNCE-SIGNATURE-INVALID → NPS-AUTH-UNAUTHENTICATED", () => {
     expect(NDP_ERROR_TO_NPS_STATUS["NDP-ANNOUNCE-SIGNATURE-INVALID"]).toBe("NPS-AUTH-UNAUTHENTICATED");
+  });
+
+  it("NDP-ANNOUNCE-PROFILE-VIOLATION → NPS-AUTH-FORBIDDEN", () => {
+    expect(NDP_ERROR_TO_NPS_STATUS["NDP-ANNOUNCE-PROFILE-VIOLATION"]).toBe("NPS-AUTH-FORBIDDEN");
+  });
+
+  it("NDP-ANNOUNCE-STALE → NPS-CLIENT-NOT-FOUND", () => {
+    expect(NDP_ERROR_TO_NPS_STATUS["NDP-ANNOUNCE-STALE"]).toBe("NPS-CLIENT-NOT-FOUND");
   });
 
   it("NDP-GRAPH-SEQ-GAP → NPS-STREAM-SEQ-GAP", () => {
@@ -765,12 +792,14 @@ describe("NDP_ERROR_TO_NPS_STATUS mapping", () => {
     expect(NDP_ERROR_TO_NPS_STATUS["NDP-FEDERATION-LOOP"]).toBe("NPS-CLIENT-CONFLICT");
   });
 
-  it("covers all 13 spec NDP codes", () => {
+  it("covers all spec NDP codes", () => {
     const specCodes = [
       "NDP-RESOLVE-NOT-FOUND", "NDP-RESOLVE-AMBIGUOUS", "NDP-RESOLVE-TIMEOUT",
+      "NDP-RESOLVE-STALE",
       "NDP-ANNOUNCE-SIGNATURE-INVALID", "NDP-ANNOUNCE-NID-MISMATCH",
       "NDP-ANNOUNCE-ROLE-REMOVED", "NDP-ANNOUNCE-ROLE-UNKNOWN",
-      "NDP-ANNOUNCE-CONFLICT", "NDP-GRAPH-SEQ-ROLLBACK", "NDP-GRAPH-SEQ-GAP",
+      "NDP-ANNOUNCE-CONFLICT", "NDP-ANNOUNCE-PROFILE-VIOLATION",
+      "NDP-ANNOUNCE-STALE", "NDP-GRAPH-SEQ-ROLLBACK", "NDP-GRAPH-SEQ-GAP",
       "NDP-ISSUER-NOT-ALLOWED", "NDP-CA-ATTEST-REQUIRED", "NDP-REGISTRY-UNAVAILABLE",
     ];
     for (const c of specCodes) {

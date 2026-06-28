@@ -24,6 +24,7 @@ export {
 export {
   Tier1JsonCodec,
   Tier2MsgPackCodec,
+  Tier3BinaryVectorCodec,
   NpsFrameCodec,
 } from "./codec.js";
 export type { NpsFrame } from "./codec.js";

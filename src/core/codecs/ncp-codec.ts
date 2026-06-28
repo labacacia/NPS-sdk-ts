@@ -2,7 +2,8 @@
 // Copyright (c) 2026 LabAcacia / INNO LOTUS PTY LTD
 //
 // NCP Codec — Top-level encode/decode dispatcher
-// Routes to Tier-1 JSON or Tier-2 MsgPack based on frame header flags.
+// Routes to Tier-1 JSON, Tier-2 MsgPack, or Tier-3 BinaryVector based on
+// frame header flags.
 
 import {
   parseFrameHeader,
@@ -15,6 +16,10 @@ import {
 } from "../frame-header.js";
 import { encodeJson, decodeJson } from "./tier1-json-codec.js";
 import { encodeMsgPack, decodeMsgPack } from "./tier2-msgpack-codec.js";
+import {
+  decodeBinaryVectorPayload,
+  encodeBinaryVectorPayload,
+} from "./tier3-binary-vector-codec.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -99,8 +104,18 @@ export function decodeFrame(
     case EncodingTier.MsgPack:
       payload = decodeMsgPack(payloadBytes);
       break;
+    case EncodingTier.BinaryVector:
+      try {
+        payload = decodeBinaryVectorPayload(payloadBytes);
+      } catch (err) {
+        throw new NcpError(
+          "NPS-CLIENT-BAD-FRAME",
+          `Malformed BinaryVector payload: ${String(err)}`,
+        );
+      }
+      break;
     default:
-      // NCP-E-05: Reserved tiers (0x02, 0x03)
+      // NCP-E-05: Reserved tier 0x03.
       throw new NcpError(
         "NCP-ENCODING-UNSUPPORTED",
         `Unsupported encoding tier: 0x${(header.tier as number).toString(16).padStart(2, "0")}`,
@@ -131,6 +146,16 @@ export function encodeFrame(
       break;
     case EncodingTier.MsgPack:
       payloadBytes = encodeMsgPack(payload);
+      break;
+    case EncodingTier.BinaryVector:
+      try {
+        payloadBytes = encodeBinaryVectorPayload(payload);
+      } catch (err) {
+        throw new NcpError(
+          "NPS-CLIENT-BAD-FRAME",
+          `BinaryVector encode failed: ${String(err)}`,
+        );
+      }
       break;
     default:
       throw new NcpError(

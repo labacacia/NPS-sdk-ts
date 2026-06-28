@@ -11,7 +11,7 @@ import {
   type TopologySnapshotRequest,
 } from "../src/nwp/frames.js";
 import { NwpClient } from "../src/nwp/client.js";
-import { createDefaultRegistry } from "../src/setup.js";
+import { createDefaultRegistry, createFullRegistry } from "../src/setup.js";
 import { NpsFrameCodec, EncodingTier } from "../src/core/index.js";
 import { AnchorFrame, CapsFrame, StreamFrame } from "../src/ncp/frames.js";
 
@@ -66,6 +66,31 @@ describe("QueryFrame", () => {
     expect(f.vectorSearch?.vectorField).toBe("embedding");
     expect(f.autoAnchor).toBe(true);
     expect(f.tokenBudget).toBe(4096);
+  });
+
+  it("round-trips vector search via BinaryVector tier", () => {
+    const codec = new NpsFrameCodec(createFullRegistry());
+    const f = new QueryFrame(
+      "sha256:" + "d".repeat(64),
+      undefined,
+      3,
+      undefined,
+      undefined,
+      undefined,
+      { field: "embedding", vector: [0.25, -1.5, 3.0], topK: 2, metric: "cosine" },
+    );
+
+    const wire = codec.encode(f, { overrideTier: EncodingTier.BINARY_VECTOR });
+    const header = NpsFrameCodec.peekHeader(wire);
+    expect(header.encodingTier).toBe(EncodingTier.BINARY_VECTOR);
+    expect([...wire.slice(header.headerSize, header.headerSize + 4)]).toEqual([0x4e, 0x50, 0x42, 0x56]);
+
+    const out = codec.decode(wire) as QueryFrame;
+    expect(out.vectorSearch?.field).toBe("embedding");
+    expect(out.vectorSearch?.topK).toBe(2);
+    expect(out.vectorSearch?.vector[0]).toBeCloseTo(0.25);
+    expect(out.vectorSearch?.vector[1]).toBeCloseTo(-1.5);
+    expect(out.vectorSearch?.vector[2]).toBeCloseTo(3.0);
   });
 });
 

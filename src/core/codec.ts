@@ -16,6 +16,10 @@ import {
   FrameType,
 } from "./frames.js";
 import type { FrameRegistry } from "./registry.js";
+import {
+  decodeBinaryVectorPayload,
+  encodeBinaryVectorPayload,
+} from "./codecs/tier3-binary-vector-codec.js";
 
 // ── NpsFrame interface ────────────────────────────────────────────────────────
 
@@ -79,13 +83,40 @@ export class Tier2MsgPackCodec {
   }
 }
 
+// ── Tier-3 BinaryVector codec ─────────────────────────────────────────────────
+
+export class Tier3BinaryVectorCodec {
+  encode(frame: NpsFrame): Uint8Array {
+    try {
+      return encodeBinaryVectorPayload(frame.toDict());
+    } catch (err) {
+      throw new NpsCodecError(
+        `Tier-3 BinaryVector encode failed for 0x${frame.frameType.toString(16).padStart(2, "0")}: ${String(err)}`,
+      );
+    }
+  }
+
+  decode(frameType: FrameType, payload: Uint8Array, registry: FrameRegistry): NpsFrame {
+    const cls = registry.resolve(frameType);
+    try {
+      const data = decodeBinaryVectorPayload(payload) as Record<string, unknown>;
+      return cls.fromDict(data);
+    } catch (err) {
+      throw new NpsCodecError(
+        `Tier-3 BinaryVector decode failed for 0x${frameType.toString(16).padStart(2, "0")}: ${String(err)}`,
+      );
+    }
+  }
+}
+
 // ── NpsFrameCodec (dispatcher) ────────────────────────────────────────────────
 
 export class NpsFrameCodec {
   private readonly _registry: FrameRegistry;
   private readonly _maxPayload: number;
-  private readonly _json    = new Tier1JsonCodec();
-  private readonly _msgpack = new Tier2MsgPackCodec();
+  private readonly _json         = new Tier1JsonCodec();
+  private readonly _msgpack      = new Tier2MsgPackCodec();
+  private readonly _binaryVector = new Tier3BinaryVectorCodec();
 
   constructor(registry: FrameRegistry, options: { maxPayload?: number } = {}) {
     this._registry   = registry;
@@ -141,7 +172,16 @@ export class NpsFrameCodec {
   // ── Private ───────────────────────────────────────────────────────────────
 
   private _buildFlags(frame: NpsFrame, tier: EncodingTier): number {
-    let flags = tier === EncodingTier.JSON ? FrameFlags.TIER1_JSON : FrameFlags.TIER2_MSGPACK;
+    let flags: number;
+    if (tier === EncodingTier.JSON) {
+      flags = FrameFlags.TIER1_JSON;
+    } else if (tier === EncodingTier.MSGPACK) {
+      flags = FrameFlags.TIER2_MSGPACK;
+    } else if (tier === EncodingTier.BINARY_VECTOR) {
+      flags = FrameFlags.TIER3_BINARY_VECTOR;
+    } else {
+      throw new NpsCodecError(`Unsupported encoding tier: 0x${(tier as number).toString(16).padStart(2, "0")}.`);
+    }
 
     const isStreamFrame = "isLast" in frame;
     const isFinal       = !isStreamFrame || (frame as { isLast: boolean }).isLast;
@@ -150,9 +190,10 @@ export class NpsFrameCodec {
     return flags;
   }
 
-  private _selectCodec(tier: EncodingTier): Tier1JsonCodec | Tier2MsgPackCodec {
+  private _selectCodec(tier: EncodingTier): Tier1JsonCodec | Tier2MsgPackCodec | Tier3BinaryVectorCodec {
     if (tier === EncodingTier.JSON)    return this._json;
     if (tier === EncodingTier.MSGPACK) return this._msgpack;
+    if (tier === EncodingTier.BINARY_VECTOR) return this._binaryVector;
     throw new NpsCodecError(`Unsupported encoding tier: 0x${(tier as number).toString(16).padStart(2, "0")}.`);
   }
 }

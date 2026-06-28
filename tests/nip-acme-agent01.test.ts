@@ -36,7 +36,7 @@ interface Fixture {
 }
 
 async function createFixture(): Promise<Fixture> {
-  const caNid    = "urn:nps:ca:acme-test";
+  const caNid    = "urn:nps:org:acme-test";
   const agentNid = "urn:nps:agent:acme-test:1";
 
   const caKeys = await generateDualKeyPair();

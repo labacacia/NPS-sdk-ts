@@ -2,8 +2,8 @@
 
 # @labacacia/nps-sdk — TypeScript / Node.js
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](../../LICENSE)
-[![Release](https://img.shields.io/badge/release-v1.0.0--alpha.14-orange.svg)](../../CHANGELOG.cn.md)
-[![NCP](https://img.shields.io/badge/NCP-v0.8-5b8cff.svg)]()
+[![Release](https://img.shields.io/badge/release-v1.0.0--alpha.15-orange.svg)](../../CHANGELOG.cn.md)
+[![NCP](https://img.shields.io/badge/NCP-v0.9-5b8cff.svg)]()
 [![NWP](https://img.shields.io/badge/NWP-v0.14-4af0b0.svg)]()
 [![NIP](https://img.shields.io/badge/NIP-v0.10-7b61ff.svg)]()
 [![NDP](https://img.shields.io/badge/NDP-v0.9-f0a050.svg)]()
@@ -14,7 +14,7 @@
 
 ## 状态
 
-**v1.0.0-alpha.14 — RFC-0002 跨 SDK 端口波（第三棒）** · 5 个协议 · 271 个测试 · 覆盖率 ≥ 98%
+**v1.0.0-alpha.15 — RFC-0002 跨 SDK 端口波（第三棒）** · 5 个协议 · 271 个测试 · 覆盖率 ≥ 98%
 
 Alpha.14 候选新增：远程 NIP CA 类型化客户端（`NipCaClient`）、native-mode NWP 服务端 helper（`NwpNativeNodeServer`）和 TC-N1/TC-N2 一致性 manifest helper（`@labacacia/nps-sdk/conformance`）。
 
@@ -125,10 +125,10 @@ const results = catalogForProfile(NODE_L1).map((c) => ({ id: c.id, result: "pass
 const manifest = createConformanceManifest({
   profile: NODE_L1,
   iutName: "my-node",
-  iutVersion: "1.0.0-alpha.14",
+  iutVersion: "1.0.0-alpha.15",
   iutNid: "urn:nps:node:example.com:my-node",
   peerName: "labacacia-fixture",
-  peerVersion: "1.0.0-alpha.14",
+  peerVersion: "1.0.0-alpha.15",
   results,
 });
 const validation = validateConformanceManifest(manifest);

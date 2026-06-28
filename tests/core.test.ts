@@ -285,7 +285,7 @@ describe("NpsFrameCodec — NCP round-trips", () => {
 
   it("throws NpsCodecError for unsupported tier", () => {
     // @ts-expect-error intentional bad value
-    expect(() => codec["_selectCodec"](0x02)).toThrow(NpsCodecError);
+    expect(() => codec["_selectCodec"](0x03)).toThrow(NpsCodecError);
   });
 
   it("throws NpsCodecError when payload exceeds maxPayload", () => {

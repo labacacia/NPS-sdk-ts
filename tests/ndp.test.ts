@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { AnnounceFrame, ResolveFrame, GraphFrame } from "../src/ndp/frames.js";
+import { NdpFederationLoopError, appendForwardedBy, parseForwardedBy } from "../src/ndp/federation.js";
 import { InMemoryNdpRegistry } from "../src/ndp/ndp-registry.js";
 import { NdpAnnounceValidator, NdpAnnounceResult } from "../src/ndp/validator.js";
 import { parseNpsTxtRecord, extractHostFromTarget, type DnsTxtLookup } from "../src/ndp/dns-txt.js";
@@ -41,6 +42,9 @@ describe("AnnounceFrame", () => {
     const d   = f.unsignedDict();
     expect(d["signature"]).toBeUndefined();
     expect(d["nid"]).toBe(NID);
+    expect(d["heartbeat_interval_ms"]).toBe(60_000);
+    expect(d["node_type"]).toBeUndefined();
+    expect(d["frame"]).toBeUndefined();
   });
 
   it("liveness fields (health/last_seen) are wire-only, excluded from signing", () => {
@@ -61,6 +65,20 @@ describe("AnnounceFrame", () => {
     const back = AnnounceFrame.fromDict(d);
     expect(back.health).toBe("draining");
     expect(back.last_seen).toBe("2026-06-13T00:00:00Z");
+  });
+
+  it("activation_endpoint round-trips as an address object", () => {
+    const base = makeAnnounce();
+    const endpoint = { host: "10.0.0.5", port: 17440, protocol: "nwp" };
+    const f = new AnnounceFrame(
+      base.nid, base.addresses, base.capabilities, base.ttl, base.timestamp, base.signature,
+      undefined, undefined, undefined, undefined, undefined, "resident", endpoint,
+    );
+    const d = f.toDict();
+    expect(d["activation_endpoint"]).toEqual(endpoint);
+    expect(f.unsignedDict()["activation_endpoint"]).toEqual(endpoint);
+    const back = AnnounceFrame.fromDict(d);
+    expect(back.activation_endpoint).toEqual(endpoint);
   });
 
   it("codec roundtrip (MsgPack)", () => {
@@ -98,13 +116,62 @@ describe("GraphFrame", () => {
   it("toDict / fromDict with nodes", () => {
     const nodes = [{ nid: NID, cluster_anchor: "anchor-1", node_roles: ["worker"] }];
     const edges = [{ from_nid: NID, to_nid: "urn:nps:node:other.com:data", latency_ms: 5 }];
-    const f     = new GraphFrame("graph-1", nodes, edges, 300, { region: "us-west" });
+    const completeNodes = [...nodes, { nid: "urn:nps:node:other.com:data" }];
+    const f     = new GraphFrame("graph-1", completeNodes, edges, 300, { region: "us-west" });
     const back  = GraphFrame.fromDict(f.toDict());
     expect(back.graph_id).toBe("graph-1");
     expect(back.nodes[0]?.nid).toBe(NID);
     expect(back.edges[0]?.from_nid).toBe(NID);
     expect(back.ttl).toBe(300);
     expect(back.metadata?.["region"]).toBe("us-west");
+  });
+
+  it("rejects oversized graphs", () => {
+    const nodes = Array.from({ length: 257 }, (_, i) => ({ nid: `urn:nps:node:example.com:${i}` }));
+
+    expect(() => new GraphFrame("too-big", nodes, [], 60)).toThrow(/NDP-GRAPH-TOO-LARGE/);
+  });
+
+  it("rejects invalid graph edges", () => {
+    const nodes = [{ nid: "urn:nps:node:example.com:a" }];
+
+    expect(() => new GraphFrame("self-edge", nodes, [
+      { from_nid: nodes[0].nid, to_nid: nodes[0].nid },
+    ], 60)).toThrow(/NDP-GRAPH-INVALID/);
+    expect(() => new GraphFrame("missing-edge", nodes, [
+      { from_nid: nodes[0].nid, to_nid: "urn:nps:node:example.com:missing" },
+    ], 60)).toThrow(/NDP-GRAPH-INVALID/);
+  });
+});
+
+// ── Federation forwarding ────────────────────────────────────────────────────
+
+describe("NDP federation forwarding", () => {
+  it("parses and appends ndp-forwarded-by", () => {
+    const header = "urn:nps:agent:registry-a.example.com:r1, urn:nps:agent:registry-b.example.com:r2";
+
+    expect(parseForwardedBy(header)).toEqual([
+      "urn:nps:agent:registry-a.example.com:r1",
+      "urn:nps:agent:registry-b.example.com:r2",
+    ]);
+    expect(appendForwardedBy("urn:nps:agent:registry-c.example.com:r3", header)).toMatch(/registry-c/);
+  });
+
+  it("rejects federation loops", () => {
+    const header = "urn:nps:agent:registry-a.example.com:r1, urn:nps:agent:registry-b.example.com:r2";
+
+    expect(() => appendForwardedBy("urn:nps:agent:registry-b.example.com:r2", header))
+      .toThrow(NdpFederationLoopError);
+  });
+
+  it("drops silently at the 3-hop cap", () => {
+    const header = [
+      "urn:nps:agent:registry-a.example.com:r1",
+      "urn:nps:agent:registry-b.example.com:r2",
+      "urn:nps:agent:registry-c.example.com:r3",
+    ].join(", ");
+
+    expect(appendForwardedBy("urn:nps:agent:registry-d.example.com:r4", header)).toBeUndefined();
   });
 });
 
@@ -263,7 +330,7 @@ describe("NdpAnnounceValidator", () => {
     const f = new AnnounceFrame(NID, ADDRS, CAPS, 300, "2026-01-01T00:00:00Z", "rsa:invalid");
     const r = v.validate(f);
     expect(r.isValid).toBe(false);
-    expect(r.errorCode).toBe("NDP-ANNOUNCE-SIG-INVALID");
+    expect(r.errorCode).toBe("NDP-ANNOUNCE-SIGNATURE-INVALID");
   });
 
   it("rejects corrupted base64 signature", () => {

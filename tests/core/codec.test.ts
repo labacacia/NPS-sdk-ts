@@ -6,6 +6,8 @@
 // Source: test/ncp_test_cases.md §1, §2
 
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { EncodingTier, FrameType, NcpError } from "../../src/core/frame-header.js";
 import { encodeFrame, decodeFrame } from "../../src/core/codecs/ncp-codec.js";
 import { computeAnchorId, type FrameSchema } from "../../src/ncp/frames/anchor-frame.js";
@@ -20,6 +22,20 @@ const testSchema: FrameSchema = {
     { name: "name", type: "string" },
   ],
 };
+
+function bytesFromHex(hex: string): Uint8Array {
+  return Uint8Array.from(hex.match(/../g)?.map((byte) => Number.parseInt(byte, 16)) ?? []);
+}
+
+function frameFromPayload(payload: Uint8Array, flags = 0x06): Uint8Array {
+  const frame = new Uint8Array(4 + payload.length);
+  const view = new DataView(frame.buffer);
+  view.setUint8(0, FrameType.Query);
+  view.setUint8(1, flags);
+  view.setUint16(2, payload.length, false);
+  frame.set(payload, 4);
+  return frame;
+}
 
 // ===========================================================================
 // NCP-F-04: EXT Flag Mismatch (High) — payload exceeds default max
@@ -123,32 +139,61 @@ describe("NCP-E-02 / E-04: Tier-2 MsgPack", () => {
 });
 
 // ===========================================================================
-// NCP-E-05: Reserved Tier
+// NCP-E-05: Reserved Tier / Tier-3 BinaryVector
 // ===========================================================================
 
-describe("NCP-E-05: Reserved encoding tier", () => {
-  // -----------------------------------------------------------------------
-  // NCP-E-05: Reserved Tier (T3/T4)
-  // Spec: §3.2, §8 — T0/T1 = 10 or 11 → NCP-ENCODING-UNSUPPORTED
-  // -----------------------------------------------------------------------
-  it("NCP-E-05: rejects reserved encoding tier 0x02", () => {
-    // Craft header with tier bits = 10 (0x02)
-    const header = new Uint8Array([
-      FrameType.Anchor,
-      0x02, // flags: tier = 10 (reserved)
-      0x00,
-      0x02, // payload: 2 bytes
-    ]);
-    const payload = new Uint8Array([0x80, 0x00]); // dummy
-    const frame = new Uint8Array(header.length + payload.length);
-    frame.set(header);
-    frame.set(payload, header.length);
+describe("NCP-E-05 / E-07: BinaryVector and reserved encoding tier", () => {
+  it("NCP-E-07: round-trips BinaryVector payloads", () => {
+    const query = {
+      frame: "0x10",
+      anchor_ref: "sha256:" + "a".repeat(64),
+      limit: 3,
+      vector_search: {
+        field: "embedding",
+        vector: [0.25, -1.5, 3.0],
+        top_k: 2,
+        metric: "cosine",
+      },
+    };
 
-    expect(() => decodeFrame(frame)).toThrow(NcpError);
-    try {
-      decodeFrame(frame);
-    } catch (e) {
-      expect((e as NcpError).code).toBe("NCP-ENCODING-UNSUPPORTED");
+    const encoded = encodeFrame(query, {
+      frameType: FrameType.Query,
+      tier: EncodingTier.BinaryVector,
+      final: true,
+    });
+    const result = decodeFrame(encoded);
+
+    expect(result.header.tier).toBe(EncodingTier.BinaryVector);
+    const decoded = result.payload as typeof query;
+    expect(decoded.vector_search.vector[0]).toBeCloseTo(0.25);
+    expect(decoded.vector_search.vector[1]).toBeCloseTo(-1.5);
+    expect(decoded.vector_search.vector[2]).toBeCloseTo(3.0);
+  });
+
+  it("NCP-E-07: decodes BinaryVector payload conformance fixture", () => {
+    const fixturePath = fileURLToPath(new URL("../../../../spec/conformance/ncp/binary_vector_payload_vectors.json", import.meta.url));
+    const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
+      vectors: Array<{
+        input: { payload_hex: string };
+        expected: { decoded_frame?: { vector_search?: { vector?: number[] } } };
+      }>;
+    };
+
+    const positive = fixture.vectors[0]!;
+    const result = decodeFrame(frameFromPayload(bytesFromHex(positive.input.payload_hex)));
+    const decoded = result.payload as { vector_search: { vector: number[] } };
+    expect(result.header.tier).toBe(EncodingTier.BinaryVector);
+    expect(decoded.vector_search.vector[0]).toBeCloseTo(0.25);
+    expect(decoded.vector_search.vector[1]).toBeCloseTo(-1.5);
+    expect(decoded.vector_search.vector[2]).toBeCloseTo(3.0);
+
+    for (const negative of fixture.vectors.slice(1)) {
+      expect(() => decodeFrame(frameFromPayload(bytesFromHex(negative.input.payload_hex)))).toThrow(NcpError);
+      try {
+        decodeFrame(frameFromPayload(bytesFromHex(negative.input.payload_hex)));
+      } catch (e) {
+        expect((e as NcpError).code).toBe("NPS-CLIENT-BAD-FRAME");
+      }
     }
   });
 

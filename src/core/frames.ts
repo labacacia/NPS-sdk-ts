@@ -51,10 +51,12 @@ export enum FrameType {
  * Wire encoding tier, stored in the lower 2 bits of the flags byte (NPS-1 §3.2).
  * 0x00 = Tier-1 JSON — human-readable; development / compatibility.
  * 0x01 = Tier-2 MsgPack — binary, ~60 % smaller; production default.
+ * 0x02 = Tier-3 BinaryVector — MsgPack metadata plus float32 vector segments.
  */
 export enum EncodingTier {
-  JSON    = 0x00,
-  MSGPACK = 0x01,
+  JSON          = 0x00,
+  MSGPACK       = 0x01,
+  BINARY_VECTOR = 0x02,
 }
 
 // ── FrameFlags ───────────────────────────────────────────────────────────────
@@ -70,11 +72,12 @@ export enum EncodingTier {
  */
 export const FrameFlags = {
   NONE:          0x00,
-  TIER1_JSON:    0x00,
-  TIER2_MSGPACK: 0x01,
-  FINAL:         0x04,
-  ENCRYPTED:     0x08,
-  EXT:           0x80,
+  TIER1_JSON:          0x00,
+  TIER2_MSGPACK:       0x01,
+  TIER3_BINARY_VECTOR: 0x02,
+  FINAL:               0x04,
+  ENCRYPTED:           0x08,
+  EXT:                 0x80,
 } as const;
 
 // ── Constants ─────────────────────────────────────────────────────────────────

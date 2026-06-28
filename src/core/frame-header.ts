@@ -14,7 +14,8 @@ export enum EncodingTier {
   Json = 0x00,
   /** Tier-2: MessagePack binary — production (~60% compression). */
   MsgPack = 0x01,
-  // 0x02 = Reserved
+  /** Tier-3: BinaryVector v1 — MessagePack metadata plus float32 vector segments. */
+  BinaryVector = 0x02,
   // 0x03 = Reserved
 }
 

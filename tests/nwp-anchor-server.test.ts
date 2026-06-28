@@ -60,11 +60,11 @@ describe("anchor-server: manifest", () => {
 
   it("splices cgn / reputation / trust", async () => {
     const policy: ReputationPolicy = { logSources: ["https://log"], banOn: [{ incident: "*", severity: ">=critical" }] };
-    const app = new AnchorNodeApp(baseOptions({ cgnLimit: 500, reputationPolicy: policy, trustAnchors: ["urn:nps:ca:root"] }));
+    const app = new AnchorNodeApp(baseOptions({ cgnLimit: 500, reputationPolicy: policy, trustAnchors: ["urn:nps:org:root"] }));
     const m = await (await req(app, `${PREFIX}/.nwm`)).json();
     expect(m.token_budget).toEqual({ cgn_limit: 500, profile: "cgn.v1" });
     expect(m.reputation_policy.log_sources).toEqual(["https://log"]);
-    expect(m.trust_anchors).toEqual(["urn:nps:ca:root"]);
+    expect(m.trust_anchors).toEqual(["urn:nps:org:root"]);
   });
 });
 

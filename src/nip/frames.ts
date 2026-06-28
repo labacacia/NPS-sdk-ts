@@ -3,6 +3,19 @@
 
 import { EncodingTier, FrameType } from "../core/frames.js";
 import type { NpsFrame } from "../core/codec.js";
+import { REVOKE_FRAME_INVALID } from "./error-codes.js";
+
+const REASON_PARENT_REVOKED = "parent_revoked";
+
+function validateRevokeParentRule(reason: string, parentNid?: string): void {
+  if (reason === REASON_PARENT_REVOKED) {
+    if (!parentNid) {
+      throw new Error(`${REVOKE_FRAME_INVALID}: parent_nid is required when reason=parent_revoked`);
+    }
+  } else if (parentNid !== undefined) {
+    throw new Error(`${REVOKE_FRAME_INVALID}: parent_nid must be omitted unless reason=parent_revoked`);
+  }
+}
 import { AssuranceLevel } from "./assurance-level.js";
 
 export interface IdentReputationPolicyHint {
@@ -98,30 +111,49 @@ export class TrustFrame implements NpsFrame {
   readonly preferredTier = EncodingTier.MSGPACK;
 
   constructor(
-    public readonly issuerNid:  string,
-    public readonly subjectNid: string,
-    public readonly scopes:     readonly string[],
-    public readonly expiresAt:  string,
-    public readonly signature:  string,
+    public readonly grantorNid:  string,
+    public readonly granteeCa:   string,
+    public readonly trustScope:  readonly string[],
+    public readonly nodes:       readonly string[],
+    public readonly issuedAt:    string,
+    public readonly expiresAt:   string,
+    public readonly serial:      string,
+    public readonly signerNid:   string,
+    public readonly signature:   string,
   ) {}
+
+  unsignedDict(): Record<string, unknown> {
+    return {
+      frame:       "0x21",
+      grantor_nid: this.grantorNid,
+      grantee_ca:  this.granteeCa,
+      trust_scope: this.trustScope,
+      nodes:       this.nodes,
+      issued_at:   this.issuedAt,
+      expires_at:  this.expiresAt,
+      serial:      this.serial,
+      signer_nid:  this.signerNid,
+    };
+  }
 
   toDict(): Record<string, unknown> {
     return {
-      issuer_nid:  this.issuerNid,
-      subject_nid: this.subjectNid,
-      scopes:      this.scopes,
-      expires_at:  this.expiresAt,
+      ...this.unsignedDict(),
       signature:   this.signature,
     };
   }
 
   static fromDict(data: Record<string, unknown>): TrustFrame {
     return new TrustFrame(
-      data["issuer_nid"]  as string,
-      data["subject_nid"] as string,
-      data["scopes"]      as string[],
-      data["expires_at"]  as string,
-      data["signature"]   as string,
+      (data["grantor_nid"] ?? data["issuer_nid"]) as string,
+      (data["grantee_ca"]  ?? data["subject_nid"]) as string,
+      (data["trust_scope"] ?? data["scopes"] ?? []) as string[],
+      (data["nodes"] ?? []) as string[],
+      (data["issued_at"] ?? "") as string,
+      data["expires_at"] as string,
+      (data["serial"] ?? "") as string,
+      (data["signer_nid"] ?? data["grantor_nid"] ?? data["issuer_nid"] ?? "") as string,
+      data["signature"] as string,
     );
   }
 }
@@ -131,24 +163,46 @@ export class RevokeFrame implements NpsFrame {
   readonly preferredTier = EncodingTier.MSGPACK;
 
   constructor(
-    public readonly nid:       string,
-    public readonly reason?:   string,
-    public readonly revokedAt?: string,
-  ) {}
+    public readonly targetNid:  string,
+    public readonly reason:     string,
+    public readonly revokedAt:  string,
+    public readonly signerNid:  string,
+    public readonly signature:  string,
+    public readonly serial?:    string,
+    public readonly parentNid?: string,
+  ) {
+    validateRevokeParentRule(reason, parentNid);
+  }
+
+  unsignedDict(): Record<string, unknown> {
+    const out: Record<string, unknown> = {
+      frame:      "0x22",
+      target_nid: this.targetNid,
+      reason:     this.reason,
+      revoked_at: this.revokedAt,
+      signer_nid: this.signerNid,
+    };
+    if (this.serial !== undefined) out["serial"] = this.serial;
+    if (this.parentNid !== undefined) out["parent_nid"] = this.parentNid;
+    return out;
+  }
 
   toDict(): Record<string, unknown> {
     return {
-      nid:        this.nid,
-      reason:     this.reason     ?? null,
-      revoked_at: this.revokedAt  ?? null,
+      ...this.unsignedDict(),
+      signature: this.signature,
     };
   }
 
   static fromDict(data: Record<string, unknown>): RevokeFrame {
     return new RevokeFrame(
-      data["nid"]        as string,
-      (data["reason"]     as string | null) ?? undefined,
-      (data["revoked_at"] as string | null) ?? undefined,
+      (data["target_nid"] ?? data["nid"]) as string,
+      data["reason"] as string,
+      data["revoked_at"] as string,
+      (data["signer_nid"] ?? "") as string,
+      (data["signature"] ?? "") as string,
+      (data["serial"] as string | undefined) ?? undefined,
+      (data["parent_nid"] as string | undefined) ?? undefined,
     );
   }
 }
