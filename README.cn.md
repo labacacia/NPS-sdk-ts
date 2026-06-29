@@ -35,8 +35,10 @@ Alpha.14 候选新增：远程 NIP CA 类型化客户端（`NipCaClient`）、na
 ## 安装
 
 ```bash
-npm install @labacacia/nps-sdk
+npm install @labacacia/nps-sdk@alpha
 ```
+
+Alpha 版本发布在 npm 的 `alpha` dist-tag 上；`latest` 保留给默认/稳定安装通道。
 
 > **对等依赖：** Node.js 22+
 

@@ -35,8 +35,10 @@ Alpha.15 additions: typed remote NIP CA client (`NipCaClient`), native-mode NWP 
 ## Installation
 
 ```bash
-npm install @labacacia/nps-sdk
+npm install @labacacia/nps-sdk@alpha
 ```
+
+Alpha releases are published on the `alpha` dist-tag. The npm `latest` tag is reserved for the default/stable install channel.
 
 > **Peer requirement:** Node.js 22+
 

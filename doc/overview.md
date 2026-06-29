@@ -2,7 +2,7 @@ English | [中文版](./overview.cn.md)
 
 # `@labacacia/nps-sdk` — API Reference Overview
 
-[![npm](https://img.shields.io/npm/v/@labacacia/nps-sdk)](https://www.npmjs.com/package/@labacacia/nps-sdk)
+[![npm alpha](https://img.shields.io/npm/v/@labacacia/nps-sdk/alpha)](https://www.npmjs.com/package/@labacacia/nps-sdk)
 
 The NPS TypeScript SDK is a dual-format (ESM + CJS) port of the .NET reference
 implementation. This document is the entry point for the per-module API
@@ -40,8 +40,10 @@ references — each protocol has its own file below.
 ## Install
 
 ```bash
-npm install @labacacia/nps-sdk
+npm install @labacacia/nps-sdk@alpha
 ```
+
+Alpha releases are published on the `alpha` dist-tag. The npm `latest` tag is reserved for the default/stable install channel.
 
 Requires **Node.js 18+** (for Web Crypto) or a modern browser with native
 `crypto.subtle`.
